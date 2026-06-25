@@ -1,0 +1,358 @@
+================================================================================
+                    OMOTENASHI - INSTRUÇÕES DE DEPLOY
+                         24 de Junho de 2026
+================================================================================
+
+PROJETO PRONTO PARA PRODUÇÃO ✅
+
+Status do Projeto:
+  ✓ Build:          PASSED
+  ✓ TypeScript:     0 ERRORS
+  ✓ Prisma DB:      READY
+  ✓ Vercel Link:    CONNECTED
+
+================================================================================
+ERROS ENCONTRADOS E CORRIGIDOS
+================================================================================
+
+ERRO 1: ArrowRight não importado
+────────────────────────────────
+  Arquivo:   app/dashboard/certificado/page.tsx:9
+  Problema:  Componente usava ArrowRight mas não estava no import
+  Solução:   Adicionado ArrowRight ao import de lucide-react
+  Status:    ✅ CORRIGIDO
+
+ERRO 2: Stripe API version desatualizada
+────────────────────────────────────────
+  Arquivo:   lib/stripe.ts:4
+  Problema:  Version "2024-11-20.acacia" incompatível com SDK 17.7.0
+  Solução:   Atualizado para "2025-02-24.acacia"
+  Status:    ✅ CORRIGIDO
+
+ERRO 3: Missing metadataBase (build warning)
+─────────────────────────────────────────────
+  Arquivo:   app/layout.tsx:8
+  Problema:  Build warnings sobre metadataBase para OpenGraph/Twitter
+  Solução:   Adicionado metadataBase com URL dinâmica
+  Status:    ✅ CORRIGIDO
+
+================================================================================
+STACK DE PRODUÇÃO
+================================================================================
+
+Framework:          Next.js 14.2.35
+Runtime:            Node.js (Vercel)
+Database:           PostgreSQL (Neon)
+Authentication:     NextAuth 4.24.11
+Payment Processing: Stripe 17.7.0
+ORM:                Prisma 6.19.3
+Frontend:           React 18.3.1 + Tailwind CSS
+
+================================================================================
+BUILD REPORT
+================================================================================
+
+Páginas Estáticas:   48 rotas pré-renderizadas
+Rotas Dinâmicas:     23 endpoints API
+Bundle Size:         87.6 kB (First Load JS - otimizado)
+Middleware:          49.4 kB
+Tempo de Build:      ~2 minutos
+Status:              ✅ SUCCESSFUL
+
+Rotas API Disponíveis:
+  ✓ /api/auth/[...nextauth]    - NextAuth authentication
+  ✓ /api/admin/*               - Admin endpoints (5 rotas)
+  ✓ /api/stripe/*              - Stripe webhooks (3 rotas)
+  ✓ /api/lessons               - Lesson management
+  ✓ /api/progress              - User progress tracking
+  ✓ /api/forum/*               - Forum functionality (2 rotas)
+  ✓ /api/ebook                 - E-book chapters
+  ✓ /api/enroll                - Course enrollment
+  ✓ /api/register              - User registration
+  ✓ /api/seed*                 - Database seeding (2 rotas)
+
+================================================================================
+INFORMAÇÕES DO PROJETO VERCEL
+================================================================================
+
+Project ID:         prj_iTxJSRJFU1XHFhKIMBjMPVVnr6mz
+Organization ID:    team_Jqoz8bZhdcB8hcK4o2YPHwYs
+Project Name:       curso-omotenashi
+Framework:          Next.js
+
+Build Command:      npx prisma generate && npx prisma db push --accept-data-loss && next build
+Output Directory:   .next
+
+================================================================================
+PASSO 1: CONFIGURAR ENVIRONMENT VARIABLES NO VERCEL
+================================================================================
+
+Acesse: https://vercel.com/dashboard
+
+1. Selecione o projeto "curso-omotenashi"
+2. Vá para: Settings → Environment Variables
+3. Adicione as seguintes variáveis:
+
+   DATABASE_URL
+   ────────────
+   Value: postgresql://user:password@ep-xxxx.us-east-2.aws.neon.tech/neondb?sslmode=require
+   Description: Conexão com banco de dados Neon PostgreSQL
+   Environments: Production, Preview, Development
+
+   NEXTAUTH_SECRET
+   ───────────────
+   Gerar com: openssl rand -hex 32
+   Description: Chave secreta para NextAuth
+   Environments: Production, Preview, Development
+
+   NEXTAUTH_URL
+   ────────────
+   Value: https://curso-omotenashi.vercel.app
+   Description: URL pública da aplicação
+   Environments: Production
+
+   NEXT_PUBLIC_APP_URL
+   ───────────────────
+   Value: https://curso-omotenashi.vercel.app
+   Description: URL pública (pode ser acessada pelo frontend)
+   Environments: Production, Preview, Development
+
+   STRIPE_SECRET_KEY (OPCIONAL - apenas se usar pagamentos)
+   ───────────────────────────────────────────────────────
+   Value: sk_live_...
+   Description: Chave secreta do Stripe
+   Environments: Production
+
+   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY (OPCIONAL - apenas se usar pagamentos)
+   ──────────────────────────────────────────────────────────────────────────
+   Value: pk_live_...
+   Description: Chave pública do Stripe (visível no frontend)
+   Environments: Production
+
+   STRIPE_WEBHOOK_SECRET (OPCIONAL - apenas se usar pagamentos)
+   ────────────────────────────────────────────────────────────
+   Value: whsec_...
+   Description: Secret para validar webhooks do Stripe
+   Environments: Production
+
+4. Clique em "Save"
+
+================================================================================
+PASSO 2: GIT COMMIT E PUSH DAS CORREÇÕES
+================================================================================
+
+Execute os seguintes comandos no terminal:
+
+cd /data/data/com.termux/files/home/Projects/Omotenashi
+
+git add .
+
+git commit -m "fix: production ready - ArrowRight import, Stripe API version, metadataBase"
+
+git push origin main
+
+Após o push, o webhook do GitHub acionará automaticamente um novo build no Vercel.
+
+================================================================================
+PASSO 3: MONITORAR O BUILD NO VERCEL
+================================================================================
+
+1. Acesse: https://vercel.com/dashboard
+
+2. Selecione o projeto "curso-omotenashi"
+
+3. Vá para a aba "Deployments"
+
+4. Observe o build em progresso:
+   - Fase 1: Installing dependencies (~1 minuto)
+   - Fase 2: Prisma generate & db push (~1 minuto)
+   - Fase 3: Next.js build (~2-3 minutos)
+   - Fase 4: Finalização (~30 segundos)
+
+5. Status esperado: "Ready" (verde)
+
+6. Build completo: ~5-7 minutos no total
+
+================================================================================
+PASSO 4: VERIFICAÇÕES PÓS-DEPLOY
+================================================================================
+
+Após o build ser concluído com sucesso:
+
+1. ACESSAR A APLICAÇÃO
+   ────────────────────
+   URL: https://curso-omotenashi.vercel.app
+   Esperado: Página inicial carrega sem erros
+
+2. TESTAR AUTENTICAÇÃO
+   ───────────────────
+   ✓ Clicar em "Login"
+   ✓ Testar login com credenciais existentes
+   ✓ Clicar em "Register"
+   ✓ Testar registro de novo usuário
+   ✓ Verificar se email de confirmação é enviado
+
+3. VERIFICAR BANCO DE DADOS
+   ────────────────────────
+   ✓ Dashboard → Dados aparecem corretamente
+   ✓ Admin → Queries estão funcionando
+   ✓ Lições carregam sem erro 404
+
+4. TESTAR STRIPE (se configurado)
+   ──────────────────────────────
+   ✓ Ir para Checkout
+   ✓ Testar fluxo de pagamento
+   ✓ Verificar webhook de confirmação
+
+5. MONITORAR PERFORMANCE
+   ────────────────────
+   ✓ DevTools → Lighthouse
+   ✓ Target: Score > 80
+   ✓ Vercel Analytics dashboard
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+PROBLEMA: Build falha no Vercel
+───────────────────────────────
+Solução:
+  1. Verificar logs: https://vercel.com/dashboard → Deployments → Logs
+  2. Confirmar todas as environment variables estão configuradas
+  3. Testar localmente: npm run build
+  4. Verificar DATABASE_URL está correto
+  5. Executar manualmente: npx prisma db push
+
+PROBLEMA: 502 Bad Gateway ao acessar a aplicação
+──────────────────────────────────────────────
+Solução:
+  1. Verificar se DATABASE_URL está configurado
+  2. Verificar conexão com Neon PostgreSQL
+  3. Redeploy: Vercel Dashboard → Redeploy
+  4. Aguardar 2-3 minutos
+
+PROBLEMA: Auth loop infinito (redirect contínuo)
+────────────────────────────────────────────────
+Solução:
+  1. Verificar NEXTAUTH_URL está correto (sem trailing slash)
+  2. Verificar NEXTAUTH_SECRET foi gerado com openssl
+  3. Confirmar NEXT_PUBLIC_APP_URL = NEXTAUTH_URL
+  4. Limpar browser cache e cookies
+
+PROBLEMA: 404 em rotas estáticas
+─────────────────────────────────
+Solução:
+  1. Vercel Dashboard → Settings → Build & Deployment
+  2. Limpar cache: Click "Redeploy" (não "Redeploy Latest")
+  3. Executar: vercel cache rm
+  4. Fazer novo push para forçar rebuild
+
+PROBLEMA: Stripe webhooks não funcionando
+──────────────────────────────────────────
+Solução:
+  1. Verificar STRIPE_WEBHOOK_SECRET está configurado
+  2. Ir para Stripe Dashboard → Webhooks
+  3. Configurar endpoint: https://curso-omotenashi.vercel.app/api/stripe/webhook
+  4. Habilitar eventos: payment_intent.succeeded, payment_intent.payment_failed
+  5. Testar com: stripe trigger payment_intent.succeeded
+
+================================================================================
+SCRIPTS DISPONÍVEIS
+================================================================================
+
+LOCAL DEVELOPMENT:
+  npm run dev              - Inicia servidor Next.js em localhost:3000
+
+BUILD & PRODUCTION:
+  npm run build            - Gera production build
+  npm start                - Inicia servidor de produção
+  npx prisma generate      - Gera Prisma Client
+  npx prisma db push       - Sincroniza schema com database
+
+DATABASE:
+  npx prisma db push --accept-data-loss  - Force push schema
+  npx prisma studio                      - Abre Prisma Studio GUI
+  npm run db:seed                        - Alimenta database com dados iniciais
+
+DEPLOYMENT AUTOMÁTICO:
+  chmod +x deploy-vercel.sh
+  ./deploy-vercel.sh --prod               - Deploy via script
+
+================================================================================
+DOCUMENTAÇÃO COMPLETA
+================================================================================
+
+Arquivos de referência criados no diretório raiz:
+
+  README_DEPLOY.md     - Quick start guide (2.5K)
+  PRODUCTION_READY.md  - Checklist completo de produção (5.8K)
+  DEPLOYMENT.md        - Guia detalhado com troubleshooting (3.0K)
+  deploy-vercel.sh     - Script de deploy automático (2.2K)
+  NEXT_STEPS.sh        - Referência rápida (2.8K)
+
+Abra qualquer um desses arquivos para mais informações detalhadas.
+
+================================================================================
+VERIFICAÇÃO FINAL ANTES DE ACESSAR EM PRODUÇÃO
+================================================================================
+
+Checklist pré-deploy:
+
+  ☐ DATABASE_URL configurado no Vercel
+  ☐ NEXTAUTH_SECRET configurado (64 caracteres)
+  ☐ NEXTAUTH_URL e NEXT_PUBLIC_APP_URL iguais e corretos
+  ☐ Git commit feito e push enviado
+  ☐ Build passou no Vercel (status "Ready")
+  ☐ Sem erros nos logs do Vercel
+  ☐ Página inicial carrega sem erro 500
+  ☐ Auth flow testado (login/register)
+  ☐ Database queries funcionando
+  ☐ Stripe configurado (se necessário)
+
+================================================================================
+INFORMAÇÕES DE CONTATO
+================================================================================
+
+Documentação Next.js:   https://nextjs.org/docs
+Documentação Vercel:    https://vercel.com/docs
+Documentação Prisma:    https://www.prisma.io/docs
+Documentação NextAuth:  https://next-auth.js.org
+Documentação Stripe:    https://stripe.com/docs
+
+Dashboard Vercel:       https://vercel.com/dashboard
+Neon Console:           https://console.neon.tech
+Stripe Dashboard:       https://dashboard.stripe.com
+
+================================================================================
+RESUMO EXECUTIVO
+================================================================================
+
+Projeto:            Omotenashi Curso
+Status:             ✅ PRODUCTION READY
+Data:               24 de Junho de 2026
+Erros Corrigidos:   3
+Build Status:       PASSED ✓
+TypeScript Errors:  0
+Vercel Linked:      YES (prj_iTxJSRJFU1XHFhKIMBjMPVVnr6mz)
+
+TEMPO ESTIMADO PARA DEPLOY COMPLETO:
+  - Configuração env vars:  5 minutos
+  - Git commit & push:      1 minuto
+  - Build no Vercel:        5-7 minutos
+  - Verificações pós-deploy: 5 minutos
+  ─────────────────────────
+  TOTAL:                    ~20 minutos
+
+Após seguir estes passos, a aplicação estará disponível em:
+  https://curso-omotenashi.vercel.app
+
+================================================================================
+                    🎉 PRONTO PARA PRODUÇÃO! 🎉
+================================================================================
+
+Qualquer dúvida, consulte os arquivos de documentação inclusos ou acesse
+a documentação oficial dos respectivos frameworks.
+
+Boa sorte com o deploy! 🚀
+
+================================================================================

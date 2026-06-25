@@ -1,0 +1,151 @@
+============================================================
+  CURSO OMOTENASHI — PÁGINA HOTMART
+  URL: https://curso-omotenashi.vercel.app/hotmart
+============================================================
+
+🔗 LINK DE COMPRA (substituir):
+  const HOTMART_URL = "SEU_LINK_HOTMART_AQUI"
+
+============================================================
+  DADOS DO PRODUTO PARA CADASTRO NO HOTMART
+============================================================
+
+Nome do Produto: Curso Omotenashi — A Arte Japonesa da Hospitalidade
+Preço: R$ 197 (ou 12x R$ 19,70)
+URL da Página de Vendas: https://curso-omotenashi.vercel.app/hotmart
+Comissão de Afiliados: 30-40% (recomendado)
+
+============================================================
+  ESTRUTURA DA PÁGINA
+============================================================
+
+1. HERO
+   Badge: ⛩️ Curso Online — Acesso Vitalício
+   Título: A Arte Japonesa da Hospitalidade Excepcional
+   Subtítulo: Aprenda o Omotenashi — a filosofia japonesa onde o
+     funcionário se diminui para exaltar o cliente.
+   CTA: Garantir Minha Vaga — R$ 197
+   Flags: ✅ 20+ horas • 📚 E-book 300+ páginas • 🎓 Certificado
+          • 🛡️ 7 dias de garantia
+
+2. PROVA SOCIAL
+   2.500+ Alunos | 150+ Empresas | +47% NPS | 98% Satisfação
+
+3. PARA QUEM É
+   - Profissionais de Atendimento
+   - Estudantes & Iniciantes
+   - Empreendedores & Gestores
+
+4. GRADE CURRICULAR (6 módulos, 25 aulas, 20+ horas)
+
+   Módulo 1 — Fundamentos do Omotenashi
+     • O que é Omotenashi?
+     • A história da hospitalidade japonesa
+     • Os 4 pilares do Omotenashi
+     • Omotenashi vs atendimento tradicional
+
+   Módulo 2 — Comunicação que Encanta
+     • Linguagem corporal e postura
+     • Tom de voz e escolha de palavras
+     • Escuta ativa na prática
+     • Como lidar com objeções
+
+   Módulo 3 — Antecipação de Necessidades
+     • Os 3 níveis de antecipação
+     • Observação e percepção
+     • Criação de padrões de excelência
+     • Estudos de caso reais
+
+   Módulo 4 — Gestão de Experiência
+     • Jornada do cliente do início ao fim
+     • Momentos da verdade
+     • Recuperação de serviço
+     • Métricas de satisfação
+
+   Módulo 5 — Cultura Omotenashi na Prática
+     • Liderança servidora
+     • Treinamento de equipes
+     • Rituais diários de excelência
+     • Avaliação e melhoria contínua
+
+   Módulo 6 — Ferramentas Japonesas de Excelência
+     • 5S: Organização e disciplina
+     • Kaizen: Melhoria contínua
+     • PDCA: Ciclo de gestão
+     • Nemawashi: Construção de consenso
+
+5. BÔNUS EXCLUSIVOS
+   🎁 E-book 300+ Páginas (versão completa em PDF)
+   🎁 Certificado de Conclusão (horas complementares)
+   🎁 Comunidade Exclusiva (grupo WhatsApp)
+   🎁 Aulas Extras (Ikigai, Ichigo Ichie, Omoiyari)
+
+6. PREÇO
+   R$ 197 ou 12x R$ 19,70
+   Inclui: Acesso completo, E-book, Certificado, Acesso vitalício,
+           Comunidade exclusiva, 7 dias de garantia
+
+7. GARANTIA
+   7 dias de satisfação garantida ou dinheiro de volta.
+
+8. FAQ
+   - Quanto tempo dura o curso? ~20h em 6 módulos, acesso vitalício
+   - Preciso de conhecimento prévio? Não
+   - Como funciona o acesso? Imediato após confirmação Hotmart
+   - Tem garantia? 7 dias incondicional
+   - Certificado é válido? Sim
+   - Tem suporte? Sim, comunidade + email
+
+============================================================
+  INSTRUÇÕES DE CONFIGURAÇÃO
+============================================================
+
+1. Acesse https://hotmart.com e crie uma conta
+2. Vá em "Produtos" > "Criar Produto"
+3. Preencha com os dados acima
+4. Em "URL da página de vendas", coloque:
+   https://curso-omotenashi.vercel.app/hotmart
+5. Configure a comissão de afiliados (30-40%)
+6. Após criar, copie o link de checkout
+7. Edite o arquivo app/hotmart/page.tsx no projeto
+   Linha 10: const HOTMART_URL = "SEU_LINK_HOTMART_AQUI"
+   Substitua pelo link de checkout do Hotmart
+8. Faça deploy: cd curso-omotenashi && vercel deploy --prod --yes
+
+============================================================
+  TEXTOS PRONTOS PARA HOTMART
+============================================================
+
+Título do Produto:
+  Curso Omotenashi — A Arte Japonesa da Hospitalidade
+
+Descrição Curta:
+  Aprenda a filosofia japonesa de atendimento que transforma
+  clientes comuns em fãs. 20+ horas de conteúdo, e-book,
+  certificado e acesso vitalício.
+
+Descrição Longa (para página da Hotmart):
+  O Omotenashi (おもてなし) é a arte japonesa de hospitalidade
+  que vai além do atendimento. É antecipar necessidades, servir
+  com humildade genuína e criar experiências que encantam.
+
+  Neste curso completo, você vai aprender:
+  - Os fundamentos filosóficos do Omotenashi
+  - Técnicas de comunicação que criam conexão genuína
+  - Como antecipar as necessidades do cliente
+  - Gestão da experiência do cliente do início ao fim
+  - Como implementar a cultura Omotenashi na sua equipe
+  - Ferramentas japonesas de excelência (5S, Kaizen, PDCA)
+
+  O curso tem 6 módulos, 25 aulas e mais de 20 horas de
+  conteúdo em vídeo, com acesso vitalício.
+
+  Bônus inclusos:
+  - E-book com 300+ páginas
+  - Certificado de conclusão
+  - Comunidade exclusiva de alunos
+  - Aulas extras (Ikigai, Ichigo Ichie, Omoiyari)
+
+  Garantia de 7 dias. Risco zero.
+
+============================================================

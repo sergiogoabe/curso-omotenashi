@@ -1,0 +1,356 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap');
+
+@font-face {
+  font-family: 'Sinosuke';
+  src: url('/fonts/sinosuke.woff2') format('woff2'),
+       url('/fonts/sinosuke.woff') format('woff'),
+       url('/fonts/sinosuke.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 3%;
+    --foreground: 0 0% 95%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 95%;
+    --primary: 0 70% 42%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 9%;
+    --secondary-foreground: 0 0% 80%;
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 45 100% 50%;
+    --accent-foreground: 0 0% 3%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 14%;
+    --input: 0 0% 14%;
+    --ring: 0 70% 42%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+  }
+  h1, h2, h3, h4, h5 {
+    font-family: 'Zen Kaku Gothic New', sans-serif;
+    font-weight: 700;
+  }
+}
+
+.japanese-text {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+}
+
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-red-600 via-red-500 to-amber-400;
+}
+
+.sakura-border {
+  position: relative;
+}
+
+.sakura-border::after {
+  content: '🌸';
+  position: absolute;
+  bottom: -1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.lesson-card {
+  transition: all 0.3s ease;
+}
+
+.lesson-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(220, 38, 38, 0.15);
+}
+
+.ebook-page {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  min-height: 100vh;
+}
+
+.vertical-rl {
+  writing-mode: vertical-rl;
+}
+
+/* ============== JAPANESE VISUAL EFFECTS ============== */
+
+/* --- Sakura Petal Animation --- */
+@keyframes sakuraFall {
+  0% {
+    transform: translateY(-10vh) rotate(0deg) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg) translateX(100px);
+    opacity: 0;
+  }
+}
+
+@keyframes sakuraSway {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(15px);
+  }
+  50% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(20px);
+  }
+}
+
+.sakura-petal {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  animation: sakuraFall linear infinite;
+  opacity: 0;
+}
+
+/* --- Seigaiha Wave Pattern --- */
+.seigaiha-bg {
+  position: relative;
+}
+.seigaiha-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.03;
+  background-image: 
+    radial-gradient(circle at 50% 0, transparent 35%, rgba(185, 28, 28, 0.3) 35.5%, transparent 36%),
+    radial-gradient(circle at 50% 0, transparent 45%, rgba(185, 28, 28, 0.2) 45.5%, transparent 46%);
+  background-size: 60px 30px;
+  pointer-events: none;
+}
+
+/* --- Kanji Watermark --- */
+.kanji-watermark {
+  position: relative;
+}
+.kanji-watermark::after {
+  content: 'おもてなし';
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  font-size: clamp(4rem, 10vw, 10rem);
+  font-weight: 900;
+  color: rgba(185, 28, 28, 0.04);
+  line-height: 1;
+  pointer-events: none;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  writing-mode: vertical-rl;
+  letter-spacing: -0.2em;
+}
+
+/* --- Torii Gate Silhouette --- */
+.torii-silhouette {
+  position: relative;
+}
+.torii-silhouette::before {
+  content: '⛩️';
+  position: absolute;
+  font-size: clamp(8rem, 20vw, 20rem);
+  opacity: 0.02;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  pointer-events: none;
+  filter: grayscale(1);
+}
+
+/* --- Scroll Reveal --- */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+.reveal-delay-5 { transition-delay: 0.5s; }
+
+/* --- Scale Reveal --- */
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.92);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.reveal-scale.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* --- Card Hover Ripple --- */
+.ripple-card {
+  position: relative;
+  overflow: hidden;
+}
+.ripple-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(185, 28, 28, 0.08) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+.ripple-card:hover::before {
+  opacity: 1;
+}
+
+/* --- Ink Splash Divider --- */
+.ink-divider {
+  position: relative;
+  text-align: center;
+}
+.ink-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(185, 28, 28, 0.15), transparent);
+}
+.ink-divider span {
+  position: relative;
+  display: inline-block;
+  padding: 0 1.5rem;
+  font-size: 1.5rem;
+}
+
+/* --- Floating Elements --- */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+@keyframes float-delayed {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float-2 {
+  animation: float-delayed 5s ease-in-out infinite;
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.animate-float-3 {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+/* --- Glow Pulse --- */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.1); }
+  50% { box-shadow: 0 0 40px rgba(220, 38, 38, 0.2); }
+}
+.animate-glow {
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+/* --- Section Divider Wave --- */
+.wave-divider-top {
+  position: relative;
+}
+.wave-divider-top::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 40'%3E%3Cpath d='M0,20 C300,40 600,0 1200,20 L1200,0 L0,0 Z' fill='rgba(185,28,28,0.03)'/%3E%3C/svg%3E") repeat-x;
+  background-size: 1200px 40px;
+  pointer-events: none;
+}
+
+/* --- Japanese Border Pattern --- */
+.j-pattern {
+  border-image: repeating-linear-gradient(
+    90deg,
+    rgba(185, 28, 28, 0.15) 0px,
+    rgba(185, 28, 28, 0.15) 2px,
+    transparent 2px,
+    transparent 8px
+  ) 1;
+}
+
+/* --- Retro Animation overrides --- */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* --- Number Counter Animation --- */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.count-up {
+  animation: countUp 0.5s ease-out forwards;
+}
+
+/* --- Shimmer for hero --- */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255,255,255,0.02) 50%, 
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s ease-in-out infinite;
+}

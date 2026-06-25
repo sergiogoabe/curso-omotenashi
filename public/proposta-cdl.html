@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proposta Comercial - Omotenashi CDL</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  background: #F5F3EF;
+  color: #1A1410;
+  line-height: 1.5;
+}
+h1, h2, h3, h4, h5, h6 { font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 700; }
+
+/* ===== TOP BAR ===== */
+.top-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 999;
+  background: rgba(245,243,239,0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid #E8E0D6;
+  padding: 10px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.top-bar .brand { font-weight: 700; font-size: 14px; letter-spacing: 1px; color: #8B1A1A; }
+.top-bar button {
+  background: #8B1A1A;
+  color: white;
+  border: none;
+  padding: 8px 24px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+}
+.top-bar button:hover { background: #6B1010; }
+
+/* ===== COVER ===== */
+.cover {
+  width: 210mm;
+  min-height: 297mm;
+  background: linear-gradient(160deg, #1A0A0A 0%, #2D0F0F 35%, #1A0A0A 65%, #0D0505 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 60px 40px;
+  page-break-after: always;
+  position: relative;
+  overflow: hidden;
+}
+.cover::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 20% 40%, rgba(185,28,28,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 500px 500px at 80% 60%, rgba(245,158,11,0.08) 0%, transparent 50%);
+  pointer-events: none;
+}
+.cover-gold-line {
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, #B91C1C, #F59E0B);
+  margin: 0 auto 32px;
+}
+.cover::after {
+  content: '⛩️';
+  position: absolute;
+  right: 40px;
+  bottom: 40px;
+  font-size: 80px;
+  opacity: 0.06;
+}
+.cover-label {
+  font-size: 11px;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: #F59E0B;
+  margin-bottom: 28px;
+  font-weight: 500;
+}
+.cover h1 {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 54px;
+  font-weight: 900;
+  line-height: 1.12;
+  margin-bottom: 20px;
+}
+.cover h1 .gold {
+  background: linear-gradient(135deg, #DC2626, #F59E0B);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.cover-sub {
+  font-size: 16px;
+  color: rgba(255,255,255,0.55);
+  max-width: 520px;
+  margin: 0 auto 40px;
+  line-height: 1.7;
+  font-weight: 300;
+}
+.cover-meta {
+  display: flex;
+  gap: 48px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.cover-meta-item { text-align: center; }
+.cover-meta-item .label { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+.cover-meta-item .value { font-size: 14px; color: white; font-weight: 600; }
+.cover-line { width: 100%; max-width: 400px; height: 1px; background: rgba(255,255,255,0.08); margin: 36px auto; }
+.cover-contact {
+  display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; margin-top: 8px;
+}
+.cover-contact span { font-size: 13px; color: rgba(255,255,255,0.4); }
+.cover-contact strong { color: rgba(255,255,255,0.8); font-weight: 500; }
+
+/* ===== PAGE ===== */
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 48px 52px;
+  background: white;
+  position: relative;
+  page-break-after: always;
+}
+.page-inner { max-width: 680px; margin: 0 auto; }
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 36px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #E8E0D6;
+}
+.page-header .num {
+  font-size: 11px;
+  color: #B91C1C;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+.page-header .brand {
+  font-size: 11px;
+  color: #999;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+h2 {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #1A0A0A;
+  line-height: 1.2;
+}
+h2 .red { color: #B91C1C; }
+h2 .gold-text { color: #D97706; }
+.subtitle {
+  font-size: 14px;
+  color: #888;
+  margin-bottom: 28px;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.section-title {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #8B1A1A;
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #F0E6D8;
+}
+
+p { font-size: 14px; color: #444; margin-bottom: 14px; line-height: 1.7; }
+p strong { color: #1A0A0A; }
+
+/* ===== BOX DESTAQUE ===== */
+.destaque {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #FDF8F3, #FEFAF5);
+  border-left: 3px solid #B91C1C;
+  border-radius: 4px;
+  margin-bottom: 24px;
+}
+.destaque p { margin: 0; font-size: 14px; color: #4A3A30; }
+.destaque strong { color: #1A0A0A; }
+
+/* ===== GRID CARDS ===== */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+
+.card {
+  background: #FCFAF7;
+  border: 1px solid #EDE6DC;
+  padding: 20px;
+  border-radius: 4px;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: #D4C8B8; }
+.card-icon { font-size: 22px; margin-bottom: 10px; }
+.card h3 { font-size: 15px; font-weight: 600; color: #1A0A0A; margin-bottom: 6px; }
+.card p { font-size: 13px; color: #666; margin: 0; line-height: 1.6; }
+
+/* ===== METRICAS ===== */
+.metricas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+.metrica {
+  text-align: center;
+  padding: 20px 12px;
+  background: linear-gradient(135deg, #FFF5F2, #FFFBF0);
+  border: 1px solid #F0E6D8;
+  border-radius: 4px;
+}
+.metrica .num {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 34px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #B91C1C, #D97706);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 2px;
+}
+.metrica .label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: 1px; }
+.metrica .sub { font-size: 10px; color: #bbb; margin-top: 4px; }
+
+/* ===== TABELA ===== */
+table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px; }
+th {
+  padding: 12px 16px;
+  background: #1A0A0A;
+  color: white;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-align: left;
+}
+td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #EDE6DC;
+  font-size: 14px;
+  color: #444;
+}
+td:first-child { font-weight: 600; color: #1A0A0A; }
+td.preco { color: #B91C1C; font-weight: 600; }
+td.preco-cdl { color: #1A0A0A; font-weight: 700; }
+td.margem { color: #D97706; font-weight: 600; }
+td.muted { color: #999; font-size: 13px; }
+
+/* ===== STEPS ===== */
+.steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 24px; }
+.step {
+  text-align: center;
+  padding: 16px 8px;
+  background: #FCFAF7;
+  border: 1px solid #EDE6DC;
+  border-radius: 4px;
+}
+.step-circle {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #B91C1C, #D97706);
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+  margin: 0 auto 10px;
+}
+.step h4 { font-size: 13px; font-weight: 600; color: #1A0A0A; margin-bottom: 4px; }
+.step p { font-size: 11px; color: #888; margin: 0; line-height: 1.4; }
+.step .prazo { font-size: 10px; color: #B91C1C; font-weight: 500; margin-top: 6px; }
+
+/* ===== FERRAMENTAS ===== */
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  margin: 2px;
+}
+.tag-jp { background: #FEF2F0; color: #B91C1C; }
+.tag-pt { background: #FFF8F0; color: #D97706; }
+
+/* ===== RODAPE ===== */
+.page-footer {
+  position: absolute;
+  bottom: 24px;
+  left: 52px;
+  right: 52px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: #bbb;
+  border-top: 1px solid #EDE6DC;
+  padding-top: 10px;
+}
+
+/* ===== SECTION WITH BORDER ===== */
+.sessao { margin-bottom: 28px; }
+
+/* ===== CONTEUDO ===== */
+.lista { list-style: none; margin-bottom: 16px; }
+.lista li {
+  padding: 4px 0 4px 20px;
+  font-size: 13px;
+  color: #555;
+  position: relative;
+}
+.lista li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: #B91C1C;
+}
+.lista-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+.lista-2 li { break-inside: avoid; }
+
+/* ===== SIGNATURE ===== */
+.signature-area {
+  display: flex;
+  gap: 60px;
+  justify-content: center;
+  margin: 40px 0 16px;
+}
+.signature-box { text-align: center; }
+.signature-line {
+  width: 200px;
+  border-top: 1px solid #444;
+  margin: 36px auto 8px;
+}
+.signature-box p { font-size: 12px; color: #888; margin: 0; }
+.signature-box .name { font-weight: 600; color: #1A0A0A; font-size: 14px; margin-bottom: 2px; }
+
+/* ===== PLANOS ===== */
+.planos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.plano-card {
+  text-align: center;
+  padding: 20px 12px;
+  border: 1px solid #EDE6DC;
+  border-radius: 4px;
+  background: #FCFAF7;
+}
+.plano-card.destaque-card {
+  border: 2px solid #D97706;
+  background: linear-gradient(135deg, #FEF8F0, #FFFBF5);
+}
+.plano-card .nome { font-size: 14px; font-weight: 700; color: #1A0A0A; margin-bottom: 8px; }
+.plano-card .preco {
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #B91C1C;
+  margin-bottom: 8px;
+}
+.plano-card .desc { font-size: 11px; color: #888; line-height: 1.5; }
+.plano-card .badge {
+  display: inline-block;
+  padding: 2px 10px;
+  background: linear-gradient(135deg, #B91C1C, #D97706);
+  color: white;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-top: 8px;
+}
+
+/* ===== CONTATO FINAL ===== */
+.cta-box {
+  text-align: center;
+  padding: 28px;
+  background: linear-gradient(135deg, #1A0A0A, #2D0F0F);
+  color: white;
+  border-radius: 4px;
+  margin: 24px 0;
+}
+.cta-box p { color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 16px; }
+.cta-box p:first-child { font-family: 'Zen Kaku Gothic New', sans-serif; font-size: 22px; color: #F59E0B; margin-bottom: 8px; }
+.cta-contato { display: flex; gap: 32px; justify-content: center; font-size: 14px; flex-wrap: wrap; }
+.cta-contato span { color: rgba(255,255,255,0.7); }
+.cta-contato strong { color: white; font-weight: 600; }
+
+/* ===== PRINT ===== */
+@media print {
+  body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .top-bar { display: none; }
+  .cover, .page { width: 100%; margin: 0; padding: 0; }
+  .cover { padding: 60px 40px; }
+  .page { padding: 48px 52px; }
+  .card:hover { border-color: #EDE6DC; }
+  @page { margin: 0; size: A4; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .cover h1 { font-size: 32px; }
+  .grid-2, .grid-3, .grid-4, .metricas, .planos { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr; }
+  .lista-2 { grid-template-columns: 1fr; }
+  .signature-area { flex-direction: column; gap: 20px; }
+  .cover-meta, .cover-contact { flex-direction: column; gap: 16px; }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="brand">INFINITY AGENCY</div>
+  <button onclick="window.print()">📄 Baixar PDF</button>
+</div>
+
+<!-- ===== COVER ===== -->
+<div class="cover">
+  <div class="cover-label">Proposta de Parceria</div>
+  <div class="cover-gold-line"></div>
+  <h1>A Revolução do<br><span class="gold">Atendimento</span> que<br>Seus Associados<br>Precisam</h1>
+  <p class="cover-sub">Programa Omotenashi CDL — a filosofia japonesa de hospitalidade aplicada ao comércio local, com resultados comprovados de aumento no NPS e ticket médio.</p>
+  <div class="cover-line"></div>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><div class="label">Apresentado por</div><div class="value">Sergio Abe</div></div>
+    <div class="cover-meta-item"><div class="label">Empresa</div><div class="value">Infinity Agency</div></div>
+    <div class="cover-meta-item"><div class="label">Data</div><div class="value">Maio 2026</div></div>
+  </div>
+  <div class="cover-line"></div>
+  <div class="cover-contact">
+    <span>📞 <strong>(37) 98418-9874</strong></span>
+    <span>🌐 <strong>curso-omotenashi.vercel.app</strong></span>
+  </div>
+</div>
+
+<!-- ===== PÁGINA 1: CARTA ===== -->
+<div class="page">
+  <div class="page-inner">
+    <div class="page-header">
+      <div class="brand">INFINITY AGENCY</div>
+      <div class="num">01 / 08</div>
+    </div>
+
+    <div style="margin-bottom:32px">
+      <div style="font-size:12px;color:#B91C1C;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;font-weight:500">Carta de Apresentação</div>
+      <h2 style="font-size:22px;margin:0">Prezado Diretor da CDL,</h2>
+    </div>
+
+    <p>Em um mercado onde <strong>8 em cada 10 lojas</strong> vendem os mesmos produtos pelo mesmo preço, o atendimento é o único diferencial real que sobra. O problema? A maioria dos lojistas nunca foi treinada para entregar uma experiência que <strong>fideliza</strong>.</p>
+
+    <p>O SEBRAE ensina gestão. O SENAC ensina técnica. Mas nenhum deles ensina a criar uma <strong>conexão genuína</strong> com o cliente — aquela que faz ele voltar e trazer mais três.</p>
+
+    <p>É aí que entra o <strong>Omotenashi (おもてなし)</strong>, a filosofia japonesa de hospitalidade que transformou empresas como <strong>Ritz-Carlton, Japan Airlines e Lexus</strong> em referências mundiais de atendimento — e que eu adaptei para a realidade do comércio brasileiro.</p>
+
+    <p>Empresas que treinaram suas equipes com o Omotenashi tiveram <strong>+47% de aumento no NPS</strong>, <strong>+40% de ticket médio</strong> e <strong>redução de 60% na evasão de clientes</strong>. Estes números são reais e podem ser os resultados dos associados da CDL.</p>
+
+    <p>Esta proposta apresenta uma <strong>parceria estratégica</strong> entre a Infinity Agency e a CDL, com o objetivo de levar aos seus associados um treinamento prático, acessível e com resultados mensuráveis — enquanto a CDL gera <strong>receita recorrente</strong> e <strong>valor perceptível</strong> para quem é associado.</p>
+
+    <p>Sem custo inicial, sem risco. Apenas um <strong>workshop gratuito de 1h</strong> para começar.</p>
+
+    <p style="margin-top:36px">Atenciosamente,</p>
+    <div style="margin-top:8px;font-family:'Zen Kaku Gothic New',sans-serif;font-size:24px;font-weight:700;color:#8B1A1A">Sergio Abe</div>
+    <div style="font-size:14px;color:#888">Infinity Agency</div>
+    <div style="font-size:14px;color:#888">📞 (37) 98418-9874</div>
+  </div>
+  <div class="page-footer">
+    <span>Omotenashi CDL — Proposta de Parceria</span>
+    <span>01</span>
+  </div>
+</div>
+
+<!-- ===== PÁGINA 2: O PROBLEMA ===== -->
+<div class="page">
+  <div class="page-inner">
+    <div class="page-header">
+      <div class="brand">INFINITY AGENCY</div>
+      <div class="num">02 / 08</div>
+    </div>
+
+    <h2>O <span class="red">Problema</span> dos Lojistas</h2>
+    <p class="subtitle">O comércio brasileiro enfrenta 4 desafios críticos que o Omotenashi resolve</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-icon">⚠️</div>
+        <h3>Concorrência Genérica</h3>
+        <p>Lojas da mesma rua vendem os mesmos produtos pelo mesmo preço. O cliente escolhe por impulso — e quando a experiência é mediana, não volta mais.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📉</div>
+        <h3>Atendimento Robotizado</h3>
+        <p>Funcionários sem treinamento real de atendimento. Sorriso mecânico, sem empatia, sem capacidade de criar conexão com o cliente.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <h3>Alto Turnover</h3>
+        <p>Loja que troca de vendedor toda semana perde clientes. O cliente não cria vínculo, e cada novo vendedor precisa recomeçar do zero.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📱</div>
+        <h3>Pressão Digital</h3>
+        <p>Cliente compara preço no celular enquanto está na loja. Se o atendimento não for excepcional, a compra vai para o e-commerce.</p>
+      </div>
+    </div>
+
+    <div class="destaque">
+      <p><strong>O resultado?</strong> Lojas com alta evasão de clientes, funcionários desengajados, e a sensação de que "está cada vez mais difícil vender". A verdade é que está mais difícil <strong>se diferenciar</strong> — e o Omotenashi é a ferramenta mais poderosa para isso.</p>
+    </div>
+
+    <div class="section-title">Oportunidade para a CDL</div>
+    <div class="grid-2">
+      <div class="card" style="border-left:3px solid #B91C1C">
+        <h3 style="color:#B91C1C">Para o Lojista</h3>
+        <p>Diferencial competitivo imediato. Clientes que voltam e indicam. Equipe engajada com propósito. Aumento real no ticket médio e NPS.</p>
+      </div>
+      <div class="card" style="border-left:3px solid #D97706">
+        <h3 style="color:#D97706">Para a CDL</h3>
+        <p>Oferecer um benefício exclusivo que retém associados, gera receita de revenda, e posiciona a CDL como referência em inovação no varejo.</p>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>Omotenashi CDL — Proposta de Parceria</span>
+    <span>02</span>
+  </div>
+</div>
+
+<!-- ===== PÁGINA 3: O QUE É OMOTENASHI ===== -->
+<div class="page">
+  <div class="page-inner">
+    <div class="page-header">
+      <div class="brand">INFINITY AGENCY</div>
+      <div class="num">03 / 08</div>
+    </div>
+
+    <h2>O que é <span class="gold-text">Omotenashi</span>?</h2>
+    <p class="subtitle">A filosofia japonesa de hospitalidade onde o funcionário se diminui para exaltar o cliente</p>
+
+    <p><strong>Omotenashi (おもてなし)</strong> é a arte japonesa de servir com excelência. Diferente do atendimento ocidental — que é transacional, eficiente mas frio — o Omotenashi é <strong>emocional, antecipatório e profundamente respeitoso</strong>. Não é sobre o que você faz, mas sobre como a pessoa <em>se sente</em>.</p>
+
+    <div class="grid-3">
+      <div class="card" style="border-top:3px solid #B91C1C">
+        <div class="card-icon">🎯</div>
+        <h3>Antecipação (Sakidori)</h3>
+        <p>Perceber a necessidade do cliente antes que ele expresse. Um copo d'água sem ele pedir. O encanto está em adivinhar o desejo não dito.</p>
+      </div>
+      <div class="card" style="border-top:3px solid #D97706">
+        <div class="card-icon">🫡</div>
+        <h3>Respeito (Keii)</h3>
+        <p>No Japão, o cliente não é chamado de "rei" — é <em>okyakusama</em>, uma divindade que nos honra com sua presença. Cada interação é um privilégio.</p>
+      </div>
+      <div class="card" style="border-top:3px solid #B91C1C">
+        <div class="card-icon">🔍</div>
+        <h3>Detalhes (Kiwameru)</h3>
+        <p>A perfeição está nos pequenos gestos: um embrulho caprichado, um sorriso genuíno, um "volte sempre" sincero. Detalhes que encantam sem explicação.</p>
+      </div>
+    </div>
+
+    <div class="destaque">
+      <p style="font-style:italic">"Omotenashi não é sobre o que você faz — é sobre como a pessoa se sente. Não é serviço, é uma forma de ser. É tratar cada cliente como se aquele encontro fosse único e irrepetível."</p>
+    </div>
+
+    <p><strong>O que NÃO é Omotenashi:</strong> Não é subserviência, não é ser humilhado pelo cliente. Pelo contrário — o Omotenashi <strong>empodera o funcionário</strong> ao dar propósito e técnica para servir com excelência. O funcionário que domina o Omotenashi trabalha com orgulho, não com obrigação.</p>
+  </div>
+  <div class="page-footer">
+    <span>Omotenashi CDL — Proposta de Parceria</span>
+    <span>03</span>
+  </div>
+</div>
+
+<!-- ===== PÁGINA 4: FERRAMENTAS E CURSO ===== -->
+<div class="page">
+  <div class="page-inner">
+    <div class="page-header">
+      <div class="brand">INFINITY AGENCY</div>
+      <div class="num">04 / 08</div>
+    </div>
+
+    <h2>Ferramentas Japonesas de <span class="red">Excelência</span></h2>
+    <p class="subtitle">6 metodologias do curso que o lojista pode aplicar no dia seguinte</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-icon">🧹</div>
+        <h3>5S</h3>
+        <p><span class="tag tag-jp">Seiri</span> <span class="tag tag-pt">Seiton</span> <span class="tag tag-jp">Seiso</span> <span class="tag tag-pt">Seiketsu</span> <span class="tag tag-jp">Shitsuke</span></p>
+        <p>Organização que o cliente percebe antes do sorriso. Loja limpa = competência. Estoque arrumado = agilidade no atendimento.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📈</div>
+        <h3>Kaizen</h3>
+        <p>1% melhor a cada dia = 37x melhor em 1 ano. Pequenas melhorias diárias que transformam o resultado do negócio.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔄</div>
+        <h3>PDCA</h3>
+        <p>Planejar, Fazer, Verificar, Agir. Ciclo simples para resolver reclamações de clientes e otimizar processos.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">👣</div>
+        <h3>Genchi Genbutsu</h3>
+        <p>"Vá e veja por si mesmo." O dono precisa ir ao chão de loja para entender o problema real. Decisão no local, não na sala fechada.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🤝</div>
+        <h3>Nemawashi</h3>
+        <p>Construir consenso com a equipe antes de mudar. Decisões participativas geram engajamento e eliminam resistência.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎯</div>
+        <h3>Ikigai</h3>
+        <p>Propósito e realização no trabalho. Funcionário que encontra sentido no que faz tem 3x mais engajamento.</p>
+      </div>
+    </div>
+
+    <div class="section-title">Grade Curricular — 30 Aulas</div>
+    <div class="grid-2">
+      <div>
+        <ul class="lista">
+          <li><strong>01.</strong> Fundamentos do Omotenashi <span style="color:#999">(4 aulas)</span></li>
+          <li><strong>02.</strong> Cultura do Atendimento <span style="color:#999">(3 aulas)</span></li>
+          <li><strong>03.</strong> Técnicas Avançadas <span style="color:#999">(2 aulas)</span></li>
+          <li><strong>04.</strong> Implementação nas Empresas <span style="color:#999">(3 aulas)</span></li>
+        </ul>
+      </div>
+      <div>
+        <ul class="lista">
+          <li><strong>05.</strong> Casos de Sucesso <span style="color:#999">(2 aulas)</span></li>
+          <li><strong>06.</strong> Omotenashi na Prática <span style="color:#999">(4 aulas)</span></li>
+          <li><strong>07.</strong> Filosofia & Propósito <span style="color:#999">(5 aulas)</span></li>
+          <li><strong>08.</strong> Ferramentas Japonesas <span style="color:#999">(7 aulas)</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="destaque">
+      <p><strong>Incluso:</strong> 30 videoaulas com legendas PT-BR • E-book 300+ páginas • Certificado • Acesso vitalício • Fórum por aula • Dashboard de progresso • Suporte 24h</p>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>Omotenashi CDL — Proposta de Parceria</span>
+    <span>04</span>
+  </div>
+</div>
+
+<!-- ===== PÁGINA 5: RESULTADOS E CASES ===== -->
+<div class="page">
+  <div class="page-inner">
+    <div class="page-header">
+      <div class="brand">INFINITY AGENCY</div>
+      <div class="num">05 / 08</div>
+    </div>
+
+    <h2><span class="red">Resultados</span> Comprovados</h2>
+    <p class="subtitle">Métricas reais de empresas que implementaram o Omotenashi</p>
+
+    <div class="metricas">
+      <div class="metrica">
+        <div class="num">+47%</div>
+        <div class="label">NPS Médio</div>
+        <div class="sub">em 6 meses</div>
+      </div>
+      <div class="metrica">
+        <div class="num">+40%</div>
+        <div class="label">Ticket Médio</div>
+        <div class="sub">por cliente</div>
+      </div>
+      <div class="metrica">
+        <div class="num">-60%</div>
+        <div class="label">Evasão</div>
+        <div class="sub">de clientes</div>
+      </div>
+      <div class="metrica">
+        <div class="num">98%</div>
+        <div class="label">Satisfação</div>
+        <div class="sub">dos alunos</div>
+      </div>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:24px;text-align:center">
+      <div class="card" style="padding:24px">
+        <div style="font-family:'Zen Kaku Gothic New',sans-serif;font-size:36px;font-weight:700;color:#B91C1C">2.500+</div>
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px">Alunos</div>
+      </div>
+      <div class="card" style="padding:24px">
+        <div style="font-family:'Zen Kaku Gothic New',sans-serif;font-size:36px;font-weight:700;color:#B91C1C">150+</div>
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px">Empresas</div>
+      </div>
+      <div class="card" style="padding:24px">
+        <div style="font-family:'Zen Kaku Gothic New',sans-serif;font-size:36px;font-weight:700;color:#B91C1C">8</div>
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px">Categorias</div>
+      </div>
+    </div>
+
+    <div class="section-title">Cases de Sucesso</div>
+    <div class="grid-3">
+      <div class="card" style="border-left:3px solid #B91C1C">
+        <div style="font-size:10px;color:#B91C1C;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">🏥 Hospital</div>
+        <h3>Hospital São João de Deus</h3>
+        <p style="font-size:12px;color:#999;margin-bottom:8px">Divinópolis, MG</p>
+        <p><span class="tag tag-pt">+40% satisfação</span> <span class="tag tag-jp">3 meses</span></p>
+      </div>
+      <div class="card" style="border-left:3px solid #D97706">
+        <div style="font-size:10px;color:#D97706;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">👗 Moda</div>
+        <h3>LF Moda Feminina</h3>
+        <p style="font-size:12px;color:#999;margin-bottom:8px">Divinópolis, MG</p>
+        <p><span class="tag tag-pt">+25% vendas</span> <span class="tag tag-jp">30 dias</span></p>
+      </div>
+      <div class="card" style="border-left:3px solid #B91C1C">
+        <div style="font-size:10px;color:#B91C1C;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">🍽️ Restaurantes</div>
+        <h3>Rede Sabor Mineiro</h3>
+        <p style="font-size:12px;color:#999;margin-bottom:8px">Divinópolis, MG</p>
+        <p><span class="tag tag-pt">Elogios 3x</span> <span class="tag tag-jp">Instagram</span></p>
+      </div>
+    </div>
+
+    <div class="destaque">
+      <p><strong>Referências Mundiais:</strong> O Omotenashi é aplicado pelo <strong>Ritz-Carlton</strong> (hotelaria), <strong>Japan Airlines</strong> (aviação), <strong>Lexus</strong> (automotivo) e foi o tema central da apresentação que conquistou os Jogos Olímpicos de Tóquio 2020.</p>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>Omotenashi CDL — Proposta de Parceria</span>
+    <span>05</span>
+  </div>
+</div>
+
+<!-- ===== PÁGINA 6: PARCERIA ===== -->
+<div class="page">
+  <div class="page-inner">
+    <div class="page-header">
+      <div class="brand">INFINITY AGENCY</div>
+      <div class="num">06 / 08</div>
+    </div>
+
+    <h2><span class="red">Parceria</span> CDL + Infinity Agency</h2>
+    <p class="subtitle">Quatro modelos flexíveis para a CDL levar valor aos associados enquanto gera receita</p>
+
+    <div class="grid-2">
+      <div class="card" style="border-top:3px solid #B91C1C">
+        <h3 style="color:#B91C1C">📦 Revenda com Margem</h3>
+        <p>A CDL revende o curso corporativo para associados com <strong>margem exclusiva de 30-40%</strong>. Receita direta sem investimento inicial. Material de divulgação incluso.</p>
+      </div>
+      <div class="card" style="border-top:3px solid #D97706">
+        <h3 style="color:#D97706">🎤 Workshop Gratuito</h3>
+        <p>Vou até a CDL ministrar <strong>1 hora gratuita</strong> de introdução ao Omotenashi. Sem custo, sem compromisso, sem venda. Apenas conteúdo de valor.</p>
+      </div>
+      <div class="card" style="border-top:3px solid #B91C1C">
+        <h3 style="color:#B91C1C">🏅 Selo Omotenashi CDL</h3>
+        <p>Certificação exclusiva: <strong>só lojas associadas à CDL</strong> podem receber o Selo de excelência em atendimento. Diferencial competitivo fortíssimo.</p>
+      </div>
+      <div class="card" style="border-top:3px solid #D97706">
+        <h3 style="color:#D97706">🎫 Condição Exclusiva</h3>
+        <p>Associados CDL pagam <strong>até 50% menos</strong> que o valor de mercado. A CDL define o markup. Benefício concreto que justifica a anuidade.</p>
+      </div>
+    </div>
+
+    <div class="section-title">Modelo de Revenda — Simulação</div>
+    <table>
+      <thead>
+        <tr><th>Plano</th><th>Func.</th><th>Preço Mercado</th><th>Preço CDL</th><th>Sua Margem</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Start</td><td class="muted">até 5</td><td class="preco">R$ 997</td><td class="preco-cdl">R$ 697</td><td class="margem">R$ 300</td></tr>
+        <tr><td>Médio</td><td class="muted">até 30</td><td class="preco">R$ 1.497</td><td class="preco-cdl">R$ 997</td><td class="margem">R$ 500</td></tr>
+        <tr><td>Grande</td><td class="muted">até 50</td><td class="preco">R$ 2.497</td><td class="preco-cdl">R$ 1.697</td><td class="margem">R$ 800</td></tr>
+        <tr><td>Selo Ouro</td><td class="muted">ilimitado</td><td class="preco">R$ 2.497</td><td class="preco-cdl">R$ 1.997</td><td class="margem">R$ 500</td></tr>
+        <tr><td>Combo</td><td class="muted">ilimitado</td><td class="preco">R$ 3.200</td><td class="preco-cdl">R$ 2.497</td><td class="margem">R$ 703</td></tr>
+      </tbody>
+    </table>
+
+    <div class="destaque">
+      <p><strong>Exemplo de receita mensal para a CDL:</strong> 20 planos Start = <strong>R$ 6.000</strong> • 10 planos Médio = <strong>R$ 5.000</strong> • 5 Selos Ouro = <strong>R$ 2.500</strong> • <strong>Total: R$ 13.500/mês</strong></p>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>Omotenashi CDL — Proposta de Parceria</span>
+    <span>06</span>
+  </div>
+</div>
+
+<!-- ===== PÁGINA 7: SELO ===== -->
+<div class="page">
+  <div class="page-inner">
+    <div class="page-header">
+      <div class="brand">INFINITY AGENCY</div>
+      <div class="num">07 / 08</div>
+    </div>
+
+    <h2>O <span class="gold-text">Selo Omotenashi</span> de Certificação</h2>
+    <p class="subtitle">A certificação que diferencia as lojas associadas da CDL — nenhuma outra associação oferece</p>
+
+    <p>O <strong>Selo Omotenashi</strong> é uma certificação empresarial que atesta que a loja treinou sua equipe nos princípios japoneses de hospitalidade. É o equivalente funcional de uma <strong>ISO para atendimento ao cliente</strong> — um selo que o consumidor vê na fachada e <strong>confia na hora de comprar</strong>.</p>
+
+    <div class="planos">
+      <div class="plano-card">
+        <div class="nome">🥉 Prata</div>
+        <div class="preco">R$ 1.497</div>
+        <div class="desc">Até 30 func.<br>1 ano de acesso<br>Certificação digital<br>Relatório de progresso</div>
+      </div>
+      <div class="plano-card destaque-card">
+        <div class="nome">🥇 Ouro</div>
+        <div class="preco">R$ 2.497</div>
+        <div class="desc">Até 50 func.<br>Selo físico + digital<br>Consultoria 2h<br>Suporte 24h</div>
+        <div class="badge">Mais Vendido</div>
+      </div>
+      <div class="plano-card">
+        <div class="nome">💎 Diamante</div>
+        <div class="preco">R$ 3.200</div>
+        <div class="desc">Ilimitado<br>Selo acrílico fachada<br>Consultoria 8h<br>Auditoria completa</div>
+      </div>
+      <div class="plano-card">
+        <div class="nome">🏅 CDL</div>
+        <div class="preco">Sob Consulta</div>
+        <div class="desc">Pacote personalizado<br>para a CDL<br>Margem exclusiva<br>Suporte prioritário</div>
+      </div>
+    </div>
+
+    <div class="section-title">Processo de Certificação</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-circle">1</div>
+        <h4>Escolher</h4>
+        <p>Plano ideal para sua equipe</p>
+      </div>
+      <div class="step">
+        <div class="step-circle">2</div>
+        <h4>Treinar</h4>
+        <p>Equipe assiste às 30 aulas</p>
+      </div>
+      <div class="step">
+        <div class="step-circle">3</div>
+        <h4>Avaliar</h4>
+        <p>Infinity avalia aplicação</p>
+      </div>
+      <div class="step">
+        <div class="step-circle">4</div>
+        <h4>Certificar</h4>
+        <p>Selo para usar no marketing</p>
+      </div>
+      <div class="step">
+        <div class="step-circle">5</div>
+        <h4>Renovar</h4>
+        <p>Recertificação anual</p>
+      </div>
+    </div>
+
+    <div class="destaque">
+      <p><strong>Diferencial competitivo para a CDL:</strong> Uma loja com o Selo Omotenashi na fachada transmite <strong>credibilidade imediata</strong>. O cliente sabe que ali o atendimento é diferenciado. É um benefício que <strong>nenhuma outra associação</strong> oferece — e que faz o lojista <strong>querer ser associado</strong> para ter acesso.</p>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>Omotenashi CDL — Proposta de Parceria</span>
+    <span>07</span>
+  </div>
+</div>
+
+<!-- ===== PÁGINA 8: PRÓXIMOS PASSOS ===== -->
+<div class="page">
+  <div class="page-inner">
+    <div class="page-header">
+      <div class="brand">INFINITY AGENCY</div>
+      <div class="num">08 / 08</div>
+    </div>
+
+    <h2>Próximos <span class="red">Passos</span></h2>
+    <p class="subtitle">Nosso plano de ação para os próximos 60 dias — sem custo, sem risco</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-circle">1</div>
+        <h4>Workshop Gratuito</h4>
+        <p>1h na CDL. Introdução ao Omotenashi para associados. Sem venda, só conteúdo.</p>
+        <div class="prazo">Semana 1</div>
+      </div>
+      <div class="step">
+        <div class="step-circle">2</div>
+        <h4>Diagnóstico</h4>
+        <p>3 lojas voluntárias recebem diagnóstico de atendimento em 30 min cada.</p>
+        <div class="prazo">Semanas 2-3</div>
+      </div>
+      <div class="step">
+        <div class="step-circle">3</div>
+        <h4>Piloto</h4>
+        <p>5 lojas iniciam o treinamento. Acompanhamos resultados por 30 dias.</p>
+        <div class="prazo">Semanas 4-8</div>
+      </div>
+      <div class="step">
+        <div class="step-circle">4</div>
+        <h4>Lançamento</h4>
+        <p>Programa "Selo Omotenashi CDL" oficial para todos os associados.</p>
+        <div class="prazo">Mês 3</div>
+      </div>
+      <div class="step">
+        <div class="step-circle">5</div>
+        <h4>Expansão</h4>
+        <p>Evento de certificação com cases. Novas turmas trimestrais.</p>
+        <div class="prazo">Mês 4+</div>
+      </div>
+    </div>
+
+    <div class="section-title">O que cada parte faz</div>
+    <div class="grid-2">
+      <div>
+        <p style="font-weight:600;color:#B91C1C;margin-bottom:8px">CDL</p>
+        <ul class="lista">
+          <li>Disponibilizar espaço para o workshop (1h)</li>
+          <li>Convidar 20-30 associados para participar</li>
+          <li>Indicar 3 lojas para o diagnóstico piloto</li>
+          <li>Divulgar o programa nos canais oficiais</li>
+        </ul>
+      </div>
+      <div>
+        <p style="font-weight:600;color:#D97706;margin-bottom:8px">Infinity Agency</p>
+        <ul class="lista">
+          <li>Workshop presencial gratuito de 1h</li>
+          <li>Diagnóstico em 3 lojas voluntárias</li>
+          <li>Plataforma completa (30 aulas + dashboard)</li>
+          <li>Suporte comercial para cada venda</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="cta-box">
+      <p>Vamos transformar o atendimento do comércio local?</p>
+      <p style="font-size:14px;color:rgba(255,255,255,0.7);margin-bottom:20px">Agende uma conversa sem compromisso</p>
+      <div class="cta-contato">
+        <span>📞 <strong>(37) 98418-9874</strong></span>
+        <span>👤 <strong>Sergio Abe</strong></span>
+        <span>🌐 <strong>curso-omotenashi.vercel.app</strong></span>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:32px">
+      <p style="font-family:'Zen Kaku Gothic New',sans-serif;font-size:20px;color:#D97706;margin-bottom:4px">"O cliente não é rei. É divindade."</p>
+      <p style="font-size:12px;color:#bbb">Infinity Agency • Sergio Abe • (37) 98418-9874 • Maio 2026</p>
+    </div>
+
+    <div class="signature-area">
+      <div class="signature-box">
+        <div class="signature-line"></div>
+        <p class="name">Sergio Abe</p>
+        <p>Infinity Agency</p>
+      </div>
+      <div class="signature-box">
+        <div class="signature-line"></div>
+        <p class="name">CDL</p>
+        <p>Diretor Executivo</p>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>Omotenashi CDL — Proposta de Parceria</span>
+    <span>08</span>
+  </div>
+</div>
+
+</body>
+</html>
