@@ -112,3 +112,4 @@ Se build falhar no Vercel:
 - Vercel: https://vercel.com/docs
 - Prisma: https://www.prisma.io/docs
 - NextAuth: https://next-auth.js.org
+# Deploy trigger Thu Jun 25 19:36:24 -03 2026
