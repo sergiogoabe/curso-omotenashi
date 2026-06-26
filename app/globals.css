@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Noto+Serif+JP:wght@300;400;500;700;900&display=swap');
 
 @font-face {
   font-family: 'Sinosuke';
@@ -42,17 +42,15 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Zen Kaku Gothic New', sans-serif;
+    @apply bg-background text-foreground font-sans;
   }
   h1, h2, h3, h4, h5 {
-    font-family: 'Zen Kaku Gothic New', sans-serif;
-    font-weight: 700;
+    @apply font-display font-bold;
   }
 }
 
 .japanese-text {
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  @apply font-sans;
 }
 
 .gradient-text {
@@ -169,7 +167,7 @@
   color: rgba(185, 28, 28, 0.04);
   line-height: 1;
   pointer-events: none;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: 'Noto Serif JP', serif;
   writing-mode: vertical-rl;
   letter-spacing: -0.2em;
 }
