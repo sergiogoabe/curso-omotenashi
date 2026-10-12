@@ -186,6 +186,7 @@ test('checkout keeps password hash local and sends stable registration metadata'
     '@/lib/prisma': { prisma },
     '@/lib/stripe': { stripe, PLANS: { individual: { label: 'Individual', description: 'Teste', value: 19700 } } },
     '@/lib/registration': { registrationSchema },
+    '@/lib/rate-limit': { rateLimit: async () => ({ ok: true, remaining: 99, retryAfter: 0 }), clientIp: () => 'unit', tooMany: () => new Response(null, { status: 429 }) },
   }, { process: { env: { STRIPE_SECRET_KEY: 'synthetic-unit-fixture' } } })
   const response = await POST(new Request('http://localhost/api/stripe/checkout', { method: 'POST', body: JSON.stringify(valid) }))
   assert.equal(response.status, 200)

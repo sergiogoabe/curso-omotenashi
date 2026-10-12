@@ -1,5 +1,20 @@
 # Verificação de produção
 
+## Status desta passada (hardening para produção)
+
+Aplicado no código (build, typecheck e 25/25 testes passando):
+
+- **Rate limiting de aplicação implementado** em `lib/rate-limit.ts`: função `rateLimit(identifier, {limit, windowSec, prefix})` com backend Upstash Redis REST (pipeline `INCR`/`EXPIRE NX`/`TTL`) quando `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` estão definidos; fallback para `Map` em memória caso contrário; fail-open em erro. Helpers `clientIp(headers)` e `tooMany(retryAfter)` (Response 429 com `Retry-After`).
+- **Ligado nos endpoints sensíveis** (todos com `export const runtime = "nodejs"`): login (`lib/auth.ts` authorize, 10/60s, IP via `x-forwarded-for`/`x-real-ip` do req NextAuth), register (5/60s), ativar (10/60s), stripe/checkout (5/60s). `enroll` não recebeu (admin-only).
+- **Git inicializado** na pasta (commit snapshot inicial). `.gitignore` já cobria `.env`, `node_modules`, `.next`, `.vercel`.
+- **Env vars de produção conferidas na Vercel** (`infinity-agency/curso-omotenashi`): presentes `DATABASE_URL` (+UNPOOLED), `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `NEXT_PUBLIC_APP_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_PIX_KEY`, `ADMIN_USERNAME/PASSWORD`, `MUX_*`.
+
+Ainda pendente (ação externa, fora do código):
+
+- **Adicionar `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN` na Vercel.** Sem elas o rate limiting usa o `Map` em memória, que **não compartilha estado entre instâncias serverless** — ineficaz contra força bruta distribuída. Criar um Redis Upstash (free tier serve) e setar as duas vars em Production.
+- Validar valores (Hidden) de `STRIPE_SECRET_KEY` (deve ser `sk_live_`), `NEXTAUTH_URL` e `NEXT_PUBLIC_APP_URL` (domínio HTTPS definitivo).
+- Homologação Stripe real, teste visual, e os demais itens abaixo.
+
 ## Comandos de validação
 
 - `npm test`: regressões de validação, PIX, login e pagamento com dependências simuladas.
@@ -11,7 +26,7 @@
 
 1. Disponibilizar o PostgreSQL do ambiente e validar sua estrutura. A execução local com a configuração existente encontrou banco inacessível em `127.0.0.1:5432`. A suíte isolada não prova conectividade com o banco real.
 2. Conferir no provedor as variáveis DATABASE_URL, NEXTAUTH_URL, NEXTAUTH_SECRET, NEXT_PUBLIC_BASE_URL, STRIPE_SECRET_KEY e STRIPE_WEBHOOK_SECRET. Usar o domínio HTTPS definitivo nas URLs. Não colocar valores secretos neste documento.
-3. Aplicar limitação distribuída de tentativas de login, cadastro, checkout e ativação (WAF ou armazenamento compartilhado). Não há proteção de força bruta implementada no aplicativo; contador em memória não resolve em Vercel/serverless.
+3. Aplicar limitação distribuída de tentativas de login, cadastro, checkout e ativação. **Rate limiting de aplicação já implementado** (`lib/rate-limit.ts`), mas exige `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` na Vercel para ser distribuído; sem elas o contador em memória não resolve em Vercel/serverless. Alternativamente, WAF na borda.
 4. Realizar pagamento de homologação na Stripe e verificar os eventos `checkout.session.completed` e `checkout.session.async_payment_succeeded`, assinatura, retorno e criação de conta. Eventos locais assinados validam o código, não a integração externa.
 5. Verificar visualmente cadastro/login em navegador desktop e celular. O HTML foi testado via HTTP; automação visual não estava disponível no Termux.
 6. Revisar os alertas de dependências antes da liberação. A auditoria executada reportou 11 itens: 9 altos e 2 moderados, nas cadeias Tailwind/PostCSS e Prisma CLI (`braces`, `postcss-selector-parser`, `deepmerge-ts`, `effect` e dependentes). O Next.js foi atualizado para 16.3.8; `source-map-js` recebeu atualização compatível. Não foi aplicada migração forçada para Tailwind 4 nem downgrade que removeria o motor Prisma compatível com Android. Essas bibliotecas participam do build: restringir entradas/configurações a código confiável não equivale a uma auditoria limpa. Reavaliar versões corrigidas ou fazer migração dedicada antes de aceitar os riscos.
@@ -35,4 +50,4 @@ Os endpoints de seed estão desabilitados em produção e não devem ser usados 
 
 ## Limites da validação
 
-Não houve deploy, cobrança externa, alteração do banco real nem teste visual. A pasta não contém repositório Git. Passar build e testes não elimina os bloqueadores acima. Permanecem avisos de depreciação de middleware e de z-index no gerador de imagem; não impediram a compilação.
+Não houve deploy, cobrança externa, alteração do banco real nem teste visual. Passar build e testes não elimina os bloqueadores acima. Permanecem avisos de depreciação de middleware e de z-index no gerador de imagem; não impediram a compilação. A pasta agora tem repositório Git local (sem remote configurado).

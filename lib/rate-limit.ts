@@ -28,7 +28,7 @@ function memoryLimit(key: string, limit: number, windowSec: number): RateResult 
 function sweepMemory() {
   if (memory.size < 5000) return
   const now = Date.now()
-  for (const [k, v] of memory) if (v.resetAt <= now) memory.delete(k)
+  for (const [k, v] of Array.from(memory.entries())) if (v.resetAt <= now) memory.delete(k)
 }
 
 async function upstashLimit(key: string, limit: number, windowSec: number): Promise<RateResult> {
