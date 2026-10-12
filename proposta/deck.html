@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<title>Omotenashi — Proposta para o varejo de móveis</title>
+<style>
+@page { size: 1280px 720px; margin: 0; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root{
+  --bg:#0d0507; --bg2:#1a0d10; --red:#e04536; --orange:#f0a14a;
+  --gold:#e8b44a; --cream:#f6ece2; --mut:#c8a89a; --mut2:#8f7a72;
+}
+body{ font-family: Georgia, 'Times New Roman', serif; background: var(--bg); color: var(--cream); }
+.slide{
+  width:1280px; height:720px; page-break-after: always; position: relative;
+  overflow:hidden; display:flex; flex-direction:column; justify-content:center;
+  padding:70px 90px;
+  background: radial-gradient(1000px 600px at 85% -10%, rgba(224,69,54,.28), transparent 60%),
+              radial-gradient(800px 500px at 8% 110%, rgba(240,161,74,.18), transparent 60%),
+              linear-gradient(160deg, #160a0d, #0d0507 65%);
+}
+.slide:last-child{ page-break-after: auto; }
+.kicker{
+  font-family: 'Segoe UI', Helvetica, Arial, sans-serif; letter-spacing: 4px;
+  text-transform: uppercase; font-size: 13px; color: var(--gold); font-weight: 600;
+}
+h1{ font-size: 64px; line-height: 1.06; margin-top: 18px; font-weight: 700; }
+h1 .red, h2 .red{ color: var(--red); }
+h1 .orange{ color: var(--orange); }
+h2{ font-size: 42px; line-height: 1.12; margin-top: 14px; font-weight: 700; }
+.sub{ font-family:'Segoe UI', Helvetica, Arial, sans-serif; color: var(--mut); font-size: 19px; line-height: 1.55; margin-top: 22px; max-width: 880px; }
+.brand{ font-family: Georgia, serif; font-size: 26px; color: var(--cream); position:absolute; top:44px; left:90px; }
+.brand b{ color: var(--red); font-weight: 700; }
+.tori{ font-size: 30px; color: var(--red); }
+.page{ position:absolute; bottom:34px; right:90px; font-family:'Segoe UI',sans-serif; font-size:13px; color:var(--mut2); letter-spacing:2px; }
+.grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:26px; margin-top:44px; }
+.grid2{ display:grid; grid-template-columns: 1fr 1fr; gap:26px; margin-top:40px; }
+.card{
+  background: linear-gradient(165deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  border:1px solid rgba(224,69,54,.25); border-radius:18px; padding:28px 26px;
+}
+.card .ic{ font-size:34px; margin-bottom:14px; }
+.card h3, .plan h3{ font-family:'Segoe UI', Helvetica, Arial, sans-serif; font-size:19px; font-weight:700; margin-bottom:10px; color:var(--cream); }
+.card p, .plan p, .plan li{ font-family:'Segoe UI', Helvetica, Arial, sans-serif; font-size:14.5px; line-height:1.55; color:var(--mut); }
+.petala{ position:absolute; border-radius:50%; background:rgba(224,69,54,.12); }
+.quote{ font-size:34px; line-height:1.35; font-style:italic; max-width:900px; margin-top:26px; }
+.quote b{ color: var(--gold); font-style: normal; }
+.plan{ border-radius:20px; padding:30px 28px; background:rgba(255,255,255,.04); border:1px solid rgba(240,161,74,.28); position:relative; }
+.plan.pop{ background: linear-gradient(160deg, rgba(224,69,54,.20), rgba(240,161,74,.10)); border-color: var(--red); }
+.plan .price{ font-family: Georgia; font-size: 40px; color: var(--gold); margin: 8px 0 14px; }
+.plan li{ list-style:none; margin: 6px 0; padding-left: 20px; position:relative; }
+.plan li::before{ content:'✓'; position:absolute; left:0; color: var(--orange); font-weight:700; }
+.tag{ display:inline-block; font-family:'Segoe UI',sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; background:var(--red); color:#fff; border-radius:999px; padding:5px 14px; font-weight:700; margin-bottom:10px; }
+.lista{ margin-top:30px; }
+.lista .item{ display:flex; gap:18px; align-items:flex-start; margin:18px 0; max-width:980px; }
+.lista .num{ flex:none; width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--red),var(--orange)); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Segoe UI',sans-serif; font-weight:700; font-size:18px; }
+.lista .txt{ font-family:'Segoe UI',sans-serif; font-size:17px; color:var(--mut); line-height:1.5; }
+.lista .txt b{ color:var(--cream); }
+.cta{ display:inline-block; margin-top:36px; background:linear-gradient(90deg,var(--red),#c22f5b); color:#fff; font-family:'Segoe UI',sans-serif; font-weight:700; font-size:19px; padding:20px 44px; border-radius:999px; text-decoration:none; }
+.cta-ghost{ display:inline-block; margin-top:36px; margin-left:18px; border:1px solid rgba(246,236,226,.4); color:var(--cream); font-family:'Segoe UI',sans-serif; font-weight:600; font-size:19px; padding:20px 40px; border-radius:999px; text-decoration:none; }
+.footer-slide{ position:absolute; bottom:34px; left:90px; font-family:'Segoe UI',sans-serif; font-size:13px; color:var(--mut2); }
+</style>
+</head>
+<body>
+
+<!-- Slide 1: Capa -->
+<section class="slide">
+  <div class="brand"><span class="tori">⛩</span> Omotenashi <b>Curso</b></div>
+  <div class="kicker">Proposta exclusiva · Varejo de móveis · Cláudio — MG</div>
+  <h1>A Arte Japonesa da<br/><span class="red">Hospitalidade</span> <span class="orange">Excepcional</span></h1>
+  <p class="sub">Uma plataforma de treinamento completa para transformar sua equipe de loja em consultores de vendas encantadores — e sua empresa em referência de atendimento.</p>
+  <div>
+    <span class="cta">Proposta preparada com carinho</span>
+  </div>
+  <div class="footer-slide">Omotenashi Curso · curso-omotenashi.vercel.app</div>
+  <div class="page">01</div>
+</section>
+
+<!-- Slide 2: O problema -->
+<section class="slide">
+  <div class="brand"><span class="tori">⛩</span> Omotenashi <b>Curso</b></div>
+  <div class="kicker">O cenário que você conhece bem</div>
+  <h2>A equipe chega pensando <span class="red">em ir embora</span>?</h2>
+  <p class="sub">Você já percebeu: o vendedor atende o cliente com pressa, o "só estou olhando" sai porta afora sem um bom convite, e na sexta-feira ninguém parece trabalhar de verdade.</p>
+  <div class="grid">
+    <div class="card"><div class="ic">🚪</div><h3>Cliente que sai sem comprar</h3><p>Cada visita mal atendida é uma venda de R$ 2.000 a R$ 15.000 que vai para o concorrente.</p></div>
+    <div class="card"><div class="ic">📉</div><h3>Equipe desmotivada</h3><p>Funcionário sem propósito de servir trata o cliente como interrupção — e a loja inteira sente.</p></div>
+    <div class="card"><div class="ic">🗓</div><h3>A sexta-feira perdida</h3><p>O dia mais movimentado do varejo de móveis vira o dia em que a equipe menos se entrega.</p></div>
+  </div>
+  <div class="page">02</div>
+</section>
+
+<!-- Slide 3: O que é Omotenashi -->
+<section class="slide">
+  <div class="brand"><span class="tori">⛩</span> Omotenashi <b>Curso</b></div>
+  <div class="kicker">A filosofia que muda tudo</div>
+  <p class="quote">"Omotenashi é antecipar a necessidade do cliente <b>antes que ele peça</b> — e se diminuir para <b>exaltar quem você atende</b>."</p>
+  <p class="sub">É assim que o Japão criou a cultura de serviço mais admirada do mundo. Não é técnica de vendas: é um novo jeito de a equipe enxergar o próprio trabalho. Quando o vendedor muda o olhar, a sexta-feira vira o melhor dia da semana.</p>
+  <div class="grid">
+    <div class="card"><div class="ic">🙇</div><h3>Humildade que vende</h3><p>O funcionário se coloca a serviço do cliente — e o cliente sente que está em boas mãos.</p></div>
+    <div class="card"><div class="ic">👁</div><h3>Antecipação</h3><p>Perceber o que a cliente quer na sala de jantar nova antes mesmo de ela saber explicar.</p></div>
+    <div class="card"><div class="ic">🎁</div><h3>Detalhes que fidelizam</h3><p>Do café oferecido à entrega impecável: são os detalhes que geram indicações.</p></div>
+  </div>
+  <div class="page">03</div>
+</section>
+
+<!-- Slide 4: O que a plataforma entrega -->
+<section class="slide">
+  <div class="brand"><span class="tori">⛩</span> Omotenashi <b>Curso</b></div>
+  <div class="kicker">O que a sua empresa recebe</div>
+  <h2>Um ecossistema <span class="orange">completo</span> de treinamento</h2>
+  <div class="grid2">
+    <div class="card"><div class="ic">🎓</div><h3>Curso completo online</h3><p>Módulos práticos de Omotenashi adaptados à realidade brasileira — do primeiro contato ao pós-venda. Acesso vitalício, no ritmo de cada colaborador.</p></div>
+    <div class="card"><div class="ic">📖</div><h3>E-book exclusivo</h3><p>Manual digital de hospitalidade para consulta rápida no balcão ou no celular — a referência do dia a dia da equipe.</p></div>
+    <div class="card"><div class="ic">🏆</div><h3>Selo Omotenashi</h3><p>Certificação que a sua loja exibe com orgulho — prova pública de que ali o cliente é tratado como convidado.</p></div>
+    <div class="card"><div class="ic">💬</div><h3>Fórum da comunidade</h3><p>Equipe trocando casos reais, dúvidas respondidas e boas práticas compartilhadas — o aprendizado não para no vídeo.</p></div>
+  </div>
+  <div class="page">04</div>
+</section>
+
+<!-- Slide 5: Painel do RH e gestão -->
+<section class="slide">
+  <div class="brand"><span class="tori">⛩</span> Omotenashi <b>Curso</b></div>
+  <div class="kicker">Você no controle, sem microgerenciar</div>
+  <h2>Painel de <span class="orange">RH e resultados</span> na palma da mão</h2>
+  <div class="lista">
+    <div class="item"><div class="num">1</div><div class="txt"><b>Acompanhe o progresso de cada colaborador</b> — quem concluiu módulos, quem está engajado e quem precisa de conversa.</div></div>
+    <div class="item"><div class="num">2</div><div class="txt"><b>Relatórios gerenciais</b> para enxergar a evolução da equipe e conectar treinamento ao resultado da loja.</div></div>
+    <div class="item"><div class="num">3</div><div class="txt"><b>Programa in-company</b> — trilha desenhada para a realidade da sua loja de móveis, da recepção à entrega montada na casa do cliente.</div></div>
+    <div class="item"><div class="num">4</div><div class="txt"><b>Consultoria presencial</b> (Combo Empresarial) — levamos a cultura de hospitalidade para dentro da sua operação.</div></div>
+  </div>
+  <div class="page">05</div>
+</section>
+
+<!-- Slide 6: Como fica a sua sexta-feira -->
+<section class="slide">
+  <div class="brand"><span class="tori">⛩</span> Omotenashi <b>Curso</b></div>
+  <div class="kicker">O depois</div>
+  <h2>E se a <span class="red">sexta-feira</span> fosse o dia mais <span class="orange">esperado</span> pela sua equipe?</h2>
+  <p class="sub">Não por ser véspera de folga — mas por ser o dia de maior movimento, com clientes ansiosos para serem recebidos por uma equipe que ama servir. É isso que o Omotenashi provoca:</p>
+  <div class="grid">
+    <div class="card"><div class="ic">🤝</div><h3>Vendedor orgulhoso</h3><p>Cada atendimento vira uma chance de encantar, não uma obrigação até as 18h.</p></div>
+    <div class="card"><div class="ic">🛋</div><h3>Cliente fiel</h3><p>Quem é bem recebido volta — e indica o sofá novo da sua loja para a família inteira.</p></div>
+    <div class="card"><div class="ic">📈</div><h3>Faturamento crescente</h3><p>Atendimento excepcional reduz a guerra de desconto e aumenta o ticket médio.</p></div>
+  </div>
+  <div class="page">06</div>
+</section>
+
+<!-- Slide 7: Planos -->
+<section class="slide">
+  <div class="brand"><span class="tori">⛩</span> Omotenashi <b>Curso</b></div>
+  <div class="kicker">Investimento</div>
+  <h2>Planos para cada <span class="orange">tamanho de equipe</span></h2>
+  <div class="grid">
+    <div class="plan"><h3>Individual</h3><div class="price">R$ 197</div><p>Acesso vitalício ao curso para 1 aluno.</p><ul><li>Todos os módulos</li><li>E-book completo</li><li>Fórum da comunidade</li></ul></div>
+    <div class="plan pop"><span class="tag">Mais escolhido</span><h3>Empresarial 30</h3><div class="price">R$ 1.497</div><p>Até 30 colaboradores com suporte prioritário.</p><ul><li>Painel de RH e progresso</li><li>Selo Omotenashi</li><li>Suporte prioritário</li></ul></div>
+    <div class="plan"><h3>Empresarial 50 · Combo</h3><div class="price">R$ 2.497 · R$ 3.200</div><p>Até 50 colaboradores com suporte VIP — ou o pacote completo com consultoria presencial.</p><ul><li>Tudo do Empresarial</li><li>Suporte VIP</li><li>Combo: consultoria presencial</li></ul></div>
+  </div>
+  <p class="sub" style="margin-top:26px">Pagamento via Pix ou cartão. Acesso liberado de forma rápida e acompanhada.</p>
+  <div class="page">07</div>
+</section>
+
+<!-- Slide 8: CTA -->
+<section class="slide">
+  <div class="brand"><span class="tori">⛩</span> Omotenashi <b>Curso</b></div>
+  <div class="kicker">Próximo passo</div>
+  <h2>Vamos encantar <span class="red">Cláudio</span> juntos?</h2>
+  <p class="sub">Agende uma demonstração gratuita da plataforma. Em 30 minutos você vê o curso por dentro, o painel de RH funcionando e como aplicar o Omotenashi na sua loja ainda este mês.</p>
+  <div>
+    <a class="cta" href="https://curso-omotenashi.vercel.app/auth/register" target="_blank">Ver a plataforma →</a>
+    <a class="cta-ghost" href="https://wa.me/5537984189874?text=Quero%20conhecer%20o%20Omotenashi%20para%20minha%20loja%20de%20m%C3%B3veis" target="_blank">💬 Chamar no WhatsApp</a>
+  </div>
+  <div class="footer-slide">curso-omotenashi.vercel.app · (37) 98418-9874</div>
+  <div class="page">08</div>
+</section>
+
+</body>
+</html>
