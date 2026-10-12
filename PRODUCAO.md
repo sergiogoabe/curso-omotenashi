@@ -11,8 +11,9 @@ Aplicado no código (build, typecheck e 25/25 testes passando):
 
 Ainda pendente (ação externa, fora do código):
 
-- **Adicionar `UPSTASH_REDIS_REST_URL` e `UPSTASH_REDIS_REST_TOKEN` na Vercel.** Sem elas o rate limiting usa o `Map` em memória, que **não compartilha estado entre instâncias serverless** — ineficaz contra força bruta distribuída. Criar um Redis Upstash (free tier serve) e setar as duas vars em Production.
-- Validar valores (Hidden) de `STRIPE_SECRET_KEY` (deve ser `sk_live_`), `NEXTAUTH_URL` e `NEXT_PUBLIC_APP_URL` (domínio HTTPS definitivo).
+- **Upstash configurado na Vercel Production** ✅ (`UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`, testados com `SET`/`GET`/`DEL`). Rate limiting agora é distribuído entre instâncias serverless.
+- **⚠️ Chaves Stripe inconsistentes.** As chaves fornecidas na revisão estavam misturadas: `sk_test_` + `rk_test_` (modo TESTE) com `pk_live_` (modo PRODUÇÃO). Secret de teste não opera com publishable de produção e `sk_test` não cobra pagamentos reais. **Não foi sobrescrito** o `STRIPE_SECRET_KEY` da Vercel para não quebrar um possível live existente. Confirmar que Production usa `sk_live_` + `pk_live_` do mesmo modo.
+- Validar valores (Hidden) de `NEXTAUTH_URL` e `NEXT_PUBLIC_APP_URL` (domínio HTTPS definitivo).
 - Homologação Stripe real, teste visual, e os demais itens abaixo.
 
 ## Comandos de validação
