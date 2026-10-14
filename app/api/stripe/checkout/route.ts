@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { stripe, PLANS } from "@/lib/stripe"
+import { getStripe, PLANS } from "@/lib/stripe"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { registrationSchema } from "@/lib/registration"
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     const pending = existingPending ?? await prisma.pendingRegistration.create({
       data: { name, email, password: await bcrypt.hash(password, 12), plan, value: planConfig.value / 100 },
     })
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       payment_method_types: ["card", "pix"],
       line_items: [
         {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { stripe } from "@/lib/stripe"
+import { getStripe } from "@/lib/stripe"
 import { fulfillPayment } from "@/lib/fulfill-payment"
 
 export const dynamic = "force-dynamic"
@@ -13,7 +13,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ success: false, error: "session_id inválido" }, { status: 400 })
     }
 
-    const checkout = await stripe.checkout.sessions.retrieve(sessionId)
+    const checkout = await getStripe().checkout.sessions.retrieve(sessionId)
 
     if (checkout.payment_status === "paid") {
       await fulfillPayment(checkout)

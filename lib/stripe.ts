@@ -1,9 +1,26 @@
 import Stripe from "stripe"
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-02-24.acacia",
-  typescript: true,
-})
+let _stripe: Stripe | undefined
+
+/**
+ * Instancia o cliente Stripe de forma preguiçosa (lazy).
+ * Evita que `new Stripe()` seja avaliado no topo do módulo, o que quebra
+ * o `next build` (coleta de páginas) quando STRIPE_SECRET_KEY não está setada
+ * (ex.: builds de Preview).
+ */
+export function getStripe(): Stripe {
+  if (!_stripe) {
+    const key = process.env.STRIPE_SECRET_KEY
+    if (!key) {
+      throw new Error("STRIPE_SECRET_KEY não configurada")
+    }
+    _stripe = new Stripe(key, {
+      apiVersion: "2025-02-24.acacia",
+      typescript: true,
+    })
+  }
+  return _stripe
+}
 
 export const PLANS: Record<string, { label: string; value: number; description: string }> = {
   individual: { label: "Individual", value: 19700, description: "Acesso vitalício ao curso para 1 aluno" },
