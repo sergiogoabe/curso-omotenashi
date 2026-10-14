@@ -153,7 +153,7 @@ export function VideoPlayer({ videoUrl, lessonSlug }: VideoPlayerProps) {
 
       {showSubtitles && currentSubtitle && (
         <div className="absolute bottom-4 left-0 right-0 px-4 pointer-events-none">
-          <div className="mx-auto max-w-2xl bg-black/80 backdrop-blur-sm rounded-lg px-4 py-2 text-center">
+          <div className="mx-auto max-w-2xl bg-black/80 backdrop-blur-xs rounded-lg px-4 py-2 text-center">
             <p className="text-sm md:text-base text-white leading-relaxed">
               {currentSubtitle}
             </p>

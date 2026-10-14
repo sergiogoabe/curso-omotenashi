@@ -102,7 +102,7 @@ export default function CompanyDetail() {
                     <div className="text-right text-sm">
                       <p className="font-medium">{emp.completedLessons}/{emp.totalLessons} aulas</p>
                       <div className="w-24 h-1.5 bg-secondary rounded-full mt-1 overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-red-500 to-amber-400 rounded-full transition-all" style={{ width: `${emp.progressPercent}%` }} />
+                        <div className="h-full bg-linear-to-r from-red-500 to-amber-400 rounded-full transition-all" style={{ width: `${emp.progressPercent}%` }} />
                       </div>
                     </div>
                     <Badge variant={emp.enrolled ? "accent" : "secondary"}>

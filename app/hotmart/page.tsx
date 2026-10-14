@@ -65,7 +65,7 @@ export default function HotmartPage() {
     <div className="min-h-screen bg-background">
       {/* Hero */}
       <section className="relative min-h-[90vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-red-950/30 via-background to-background" />
+        <div className="absolute inset-0 bg-linear-to-b from-red-950/30 via-background to-background" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <Badge variant="accent" className="mb-6 text-sm px-4 py-1.5">
@@ -73,7 +73,7 @@ export default function HotmartPage() {
             </Badge>
             <h1 className="text-5xl md:text-7xl font-display font-bold leading-tight mb-6">
               A Arte Japonesa da
-              <span className="block mt-2 bg-gradient-to-r from-red-400 via-amber-400 to-red-400 bg-clip-text text-transparent">Hospitalidade Excepcional</span>
+              <span className="block mt-2 bg-linear-to-r from-red-400 via-amber-400 to-red-400 bg-clip-text text-transparent">Hospitalidade Excepcional</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
               Aprenda o <strong className="text-foreground">Omotenashi</strong> — a filosofia japonesa onde o funcionário 
@@ -111,7 +111,7 @@ export default function HotmartPage() {
               { number: "98%", label: "Satisfação" },
             ].map((s, i) => (
               <div key={i}>
-                <div className="text-3xl md:text-4xl font-display font-bold bg-gradient-to-r from-red-400 to-amber-400 bg-clip-text text-transparent">{s.number}</div>
+                <div className="text-3xl md:text-4xl font-display font-bold bg-linear-to-r from-red-400 to-amber-400 bg-clip-text text-transparent">{s.number}</div>
                 <div className="text-sm text-muted-foreground mt-1">{s.label}</div>
               </div>
             ))}
@@ -184,7 +184,7 @@ export default function HotmartPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
             {bonuses.map((b, i) => (
-              <Card key={i} className="border-red-500/20 bg-gradient-to-b from-red-950/10 to-card/50 text-center">
+              <Card key={i} className="border-red-500/20 bg-linear-to-b from-red-950/10 to-card/50 text-center">
                 <CardContent className="pt-8">
                   <b.icon className="h-10 w-10 mx-auto mb-4 text-amber-400" />
                   <h3 className="font-bold mb-2">{b.title}</h3>
@@ -204,7 +204,7 @@ export default function HotmartPage() {
             Transforme sua carreira com o conhecimento que vai te diferenciar no mercado.
           </p>
           <div className="max-w-md mx-auto">
-            <Card className="border-red-500/30 bg-gradient-to-b from-red-950/10 to-card/50">
+            <Card className="border-red-500/30 bg-linear-to-b from-red-950/10 to-card/50">
               <CardContent className="p-10">
                 <div className="text-5xl font-display font-bold mb-2">R$ 197</div>
                 <p className="text-muted-foreground mb-6">ou 12x R$ 19,70</p>

@@ -122,7 +122,7 @@ export default function Dashboard() {
 
       <div className="w-full bg-secondary/30 rounded-full h-3 mb-12 overflow-hidden border border-border/50">
         <div
-          className="h-full bg-gradient-to-r from-red-600 to-amber-400 rounded-full transition-all duration-1000 ease-out"
+          className="h-full bg-linear-to-r from-red-600 to-amber-400 rounded-full transition-all duration-1000 ease-out"
           style={{ width: `${completionPct}%` }}
         />
       </div>
@@ -198,7 +198,7 @@ export default function Dashboard() {
                   </div>
                   <div className="w-full bg-secondary/30 rounded-full h-2 overflow-hidden border border-border/50">
                     <div
-                      className="h-full bg-gradient-to-r from-red-600 to-amber-400 rounded-full transition-all duration-700"
+                      className="h-full bg-linear-to-r from-red-600 to-amber-400 rounded-full transition-all duration-700"
                       style={{ width: `${catPct}%` }}
                     />
                   </div>

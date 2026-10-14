@@ -97,7 +97,7 @@ export default function RHPage() {
   return (
     <div>
       <section className="relative min-h-[85vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-red-950/40 via-background to-background" />
+        <div className="absolute inset-0 bg-linear-to-b from-red-950/40 via-background to-background" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <Badge variant="accent" className="mb-6 text-sm px-4 py-1.5">
@@ -190,9 +190,9 @@ export default function RHPage() {
       </section>
 
       <section className="py-16 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-red-950/20 via-amber-950/10 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-r from-red-950/20 via-amber-950/10 to-transparent" />
         <div className="container mx-auto px-4 relative">
-          <Card className="max-w-3xl mx-auto border-red-500/30 bg-gradient-to-b from-red-950/10 to-card/50 text-center">
+          <Card className="max-w-3xl mx-auto border-red-500/30 bg-linear-to-b from-red-950/10 to-card/50 text-center">
             <CardContent className="p-10">
               <div className="text-6xl mb-6">🤝</div>
               <Badge variant="accent" className="mb-4">SEM COMPROMISSO</Badge>
@@ -220,7 +220,7 @@ export default function RHPage() {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {plans.map((plan, i) => (
-              <Card key={i} className={`border-border/50 relative ${plan.featured ? "border-red-500/30 bg-gradient-to-b from-red-950/10 to-transparent" : ""}`}>
+              <Card key={i} className={`border-border/50 relative ${plan.featured ? "border-red-500/30 bg-linear-to-b from-red-950/10 to-transparent" : ""}`}>
                 {plan.featured && <div className="absolute -top-3 left-1/2 -translate-x-1/2"><Badge variant="accent">{plan.badge}</Badge></div>}
                 <CardHeader>
                   <Badge variant={plan.featured ? "accent" : "secondary"} className="w-fit">{plan.badge}</Badge>
@@ -260,7 +260,7 @@ export default function RHPage() {
       </section>
 
       <section className="py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-red-950/20 via-transparent to-amber-950/20" />
+        <div className="absolute inset-0 bg-linear-to-r from-red-950/20 via-transparent to-amber-950/20" />
         <div className="container mx-auto px-4 relative text-center">
           <div className="text-6xl mb-6">🏯</div>
           <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">Vamos Crescer Juntos?</h2>

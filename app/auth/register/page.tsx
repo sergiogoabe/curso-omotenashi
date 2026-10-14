@@ -249,7 +249,7 @@ export default function Register() {
                       }`}
                     >
                       {p.badge && (
-                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-red-500 text-[10px] text-white font-bold px-2 py-0.5 rounded whitespace-nowrap">
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-red-500 text-[10px] text-white font-bold px-2 py-0.5 rounded-sm whitespace-nowrap">
                           {p.badge}
                         </span>
                       )}

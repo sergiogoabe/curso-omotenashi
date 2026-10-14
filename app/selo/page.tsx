@@ -44,7 +44,7 @@ const plans = [
     price: "2.497",
     period: "12x R$ 249,70",
     badge: "MAIS VENDIDO",
-    color: "border-amber-500/30 bg-gradient-to-b from-amber-950/10 to-transparent",
+    color: "border-amber-500/30 bg-linear-to-b from-amber-950/10 to-transparent",
     accent: true,
     features: [
       "Tudo do Selo Prata",
@@ -95,7 +95,7 @@ export default function SeloPage() {
     <div>
       {/* Hero */}
       <section className="relative min-h-[85vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-red-950/40 via-background to-background" />
+        <div className="absolute inset-0 bg-linear-to-b from-red-950/40 via-background to-background" />
         <div className="absolute inset-0" style={{
           backgroundImage: `radial-gradient(circle at 30% 40%, rgba(220, 38, 38, 0.10) 0%, transparent 50%), radial-gradient(circle at 70% 60%, rgba(245, 158, 11, 0.06) 0%, transparent 50%)`,
         }} />
@@ -132,7 +132,7 @@ export default function SeloPage() {
             </div>
             <div className="flex justify-center">
               <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-red-500/20 to-amber-500/20 blur-3xl rounded-full" />
+                <div className="absolute inset-0 bg-linear-to-r from-red-500/20 to-amber-500/20 blur-3xl rounded-full" />
                 <img
                   src="/selo-omotenashi.svg"
                   alt="Selo Omotenashi"
@@ -204,13 +204,13 @@ export default function SeloPage() {
           <div className="grid md:grid-cols-5 gap-4 max-w-5xl mx-auto">
             {steps.map((step, i) => (
               <div key={i} className="text-center">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-red-600 to-amber-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <div className="w-16 h-16 rounded-full bg-linear-to-br from-red-600 to-amber-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <span className="text-xl font-bold text-white">{step.num}</span>
                 </div>
                 <h3 className="font-display font-bold text-sm mb-1">{step.title}</h3>
                 <p className="text-xs text-muted-foreground">{step.desc}</p>
                 {i < steps.length - 1 && (
-                  <div className="hidden md:block absolute top-8 left-[60%] w-[60%] h-0.5 bg-gradient-to-r from-red-500/30 to-amber-500/30" />
+                  <div className="hidden md:block absolute top-8 left-[60%] w-[60%] h-0.5 bg-linear-to-r from-red-500/30 to-amber-500/30" />
                 )}
               </div>
             ))}
@@ -331,7 +331,7 @@ export default function SeloPage() {
 
       {/* CTA */}
       <section className="py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-red-950/20 via-transparent to-amber-950/20" />
+        <div className="absolute inset-0 bg-linear-to-r from-red-950/20 via-transparent to-amber-950/20" />
         <div className="container mx-auto px-4 relative text-center">
           <img src="/selo-omotenashi.svg" alt="" className="w-32 h-auto mx-auto mb-6 opacity-80" />
           <h2 className="text-4xl md:text-5xl font-display font-bold mb-6">

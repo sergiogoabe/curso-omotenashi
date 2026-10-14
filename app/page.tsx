@@ -81,7 +81,7 @@ export default function Home() {
       <SakuraPetals />
       {/* Hero */}
       <section className="relative min-h-[90vh] flex items-center overflow-hidden torii-silhouette">
-        <div className="absolute inset-0 bg-gradient-to-b from-red-950/30 via-background to-background" />
+        <div className="absolute inset-0 bg-linear-to-b from-red-950/30 via-background to-background" />
         <div className="absolute inset-0" style={{
           backgroundImage: `radial-gradient(circle at 20% 50%, rgba(220, 38, 38, 0.08) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(251, 191, 36, 0.05) 0%, transparent 50%)`,
         }} />
@@ -181,7 +181,7 @@ export default function Home() {
             </ScrollReveal>
             <ScrollReveal delay={200} type="scale">
             <div className="relative">
-              <div className="aspect-[4/3] rounded-xl border border-border/50 bg-gradient-to-br from-red-950/20 to-amber-950/20 p-8 flex items-center justify-center ripple-card">
+              <div className="aspect-[4/3] rounded-xl border border-border/50 bg-linear-to-br from-red-950/20 to-amber-950/20 p-8 flex items-center justify-center ripple-card">
                 <div className="text-center">
                   <div className="text-8xl mb-6 animate-float">🏯</div>
                   <blockquote className="text-lg italic text-muted-foreground">
@@ -222,7 +222,7 @@ export default function Home() {
                 <ScrollReveal key={cat.slug} delay={ci * 100}>
                 <div>
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="w-1 h-8 bg-gradient-to-b from-red-600 to-amber-400 rounded-full animate-glow" />
+                    <div className="w-1 h-8 bg-linear-to-b from-red-600 to-amber-400 rounded-full animate-glow" />
                     <div>
                       <h3 className="text-2xl font-display font-bold">{cat.name}</h3>
                       <p className="text-xs text-muted-foreground">{cat.lessons.length} {cat.lessons.length === 1 ? "aula" : "aulas"}</p>
@@ -265,7 +265,7 @@ export default function Home() {
 
       {/* B2B Section */}
       <section className="py-24 relative overflow-hidden seigaiha-bg" id="business">
-        <div className="absolute inset-0 bg-gradient-to-r from-red-950/10 via-transparent to-amber-950/10" />
+        <div className="absolute inset-0 bg-linear-to-r from-red-950/10 via-transparent to-amber-950/10" />
         <div className="container mx-auto px-4 relative">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <ScrollReveal>
@@ -303,7 +303,7 @@ export default function Home() {
             </ScrollReveal>
             <ScrollReveal delay={200} type="scale">
             <div className="relative">
-              <div className="aspect-square rounded-xl border border-border/50 bg-gradient-to-br from-red-950/20 to-amber-950/20 p-8 flex items-center justify-center ripple-card animate-glow">
+              <div className="aspect-square rounded-xl border border-border/50 bg-linear-to-br from-red-950/20 to-amber-950/20 p-8 flex items-center justify-center ripple-card animate-glow">
                 <div className="text-center">
                   <div className="text-7xl mb-4 animate-float-2">🏢</div>
                   <h3 className="text-xl font-bold mb-2">Sua Empresa Omotenashi</h3>
@@ -332,11 +332,11 @@ export default function Home() {
               <Clock className="h-4 w-4 text-red-400 animate-pulse" />
               <span className="text-sm text-red-400 font-medium">Oferta expira em:</span>
               <div className="flex gap-2">
-                <span className="bg-red-500/20 px-2 py-1 rounded text-sm font-mono font-bold text-red-300 min-w-[2ch] text-center">{String(timeLeft.hours).padStart(2, "0")}</span>
+                <span className="bg-red-500/20 px-2 py-1 rounded-sm text-sm font-mono font-bold text-red-300 min-w-[2ch] text-center">{String(timeLeft.hours).padStart(2, "0")}</span>
                 <span className="text-red-400 font-bold">:</span>
-                <span className="bg-red-500/20 px-2 py-1 rounded text-sm font-mono font-bold text-red-300 min-w-[2ch] text-center">{String(timeLeft.minutes).padStart(2, "0")}</span>
+                <span className="bg-red-500/20 px-2 py-1 rounded-sm text-sm font-mono font-bold text-red-300 min-w-[2ch] text-center">{String(timeLeft.minutes).padStart(2, "0")}</span>
                 <span className="text-red-400 font-bold">:</span>
-                <span className="bg-red-500/20 px-2 py-1 rounded text-sm font-mono font-bold text-red-300 min-w-[2ch] text-center">{String(timeLeft.seconds).padStart(2, "0")}</span>
+                <span className="bg-red-500/20 px-2 py-1 rounded-sm text-sm font-mono font-bold text-red-300 min-w-[2ch] text-center">{String(timeLeft.seconds).padStart(2, "0")}</span>
               </div>
             </div>
           </div>
@@ -379,7 +379,7 @@ export default function Home() {
             </Card>
             </ScrollReveal>
             <ScrollReveal delay={200}>
-            <Card className="relative border-red-500/30 bg-gradient-to-b from-red-950/10 to-transparent">
+            <Card className="relative border-red-500/30 bg-linear-to-b from-red-950/10 to-transparent">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <Badge variant="accent" className="text-xs px-4 py-1">MAIS VENDIDO</Badge>
               </div>
@@ -489,7 +489,7 @@ export default function Home() {
 
       {/* CTA Final */}
       <section className="py-24 relative overflow-hidden kanji-watermark">
-        <div className="absolute inset-0 bg-gradient-to-r from-red-950/20 via-transparent to-amber-950/20" />
+        <div className="absolute inset-0 bg-linear-to-r from-red-950/20 via-transparent to-amber-950/20" />
         <div className="absolute inset-0 animate-shimmer" />
         <div className="container mx-auto px-4 relative text-center">
           <ScrollReveal>

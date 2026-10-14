@@ -72,7 +72,7 @@ export default function Certificado() {
         {!isComplete && (
           <div className="w-full bg-secondary/30 rounded-full h-4 mb-8 overflow-hidden border border-border/50">
             <div
-              className="h-full bg-gradient-to-r from-red-600 to-amber-400 rounded-full transition-all duration-1000"
+              className="h-full bg-linear-to-r from-red-600 to-amber-400 rounded-full transition-all duration-1000"
               style={{ width: `${completionPct}%` }}
             />
           </div>
@@ -80,21 +80,21 @@ export default function Certificado() {
 
         <div
           ref={certRef}
-          className="relative overflow-hidden rounded-2xl border-2 border-amber-500/30 bg-gradient-to-br from-red-950/20 via-background to-amber-950/20 p-8 md:p-16 text-center"
+          className="relative overflow-hidden rounded-2xl border-2 border-amber-500/30 bg-linear-to-br from-red-950/20 via-background to-amber-950/20 p-8 md:p-16 text-center"
           style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C27B0' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" }}
         >
           <div className="absolute top-4 left-4 text-4xl opacity-20">⛩️</div>
           <div className="absolute bottom-4 right-4 text-4xl opacity-20">🌸</div>
 
           <div className="relative z-10">
-            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-red-600 to-amber-400 flex items-center justify-center">
+            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-linear-to-br from-red-600 to-amber-400 flex items-center justify-center">
               <Award className="h-10 w-10 text-white" />
             </div>
 
             <h2 className="text-xl font-display font-bold text-amber-400 mb-2">CERTIFICADO</h2>
             <p className="text-xs text-muted-foreground mb-6">DE CONCLUSÃO</p>
 
-            <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mb-6" />
+            <div className="w-24 h-0.5 bg-linear-to-r from-transparent via-amber-400 to-transparent mx-auto mb-6" />
 
             <p className="text-sm text-muted-foreground mb-2">Conferimos o presente certificado a</p>
             <h3 className="text-2xl md:text-3xl font-display font-bold mb-4 gradient-text">
@@ -106,7 +106,7 @@ export default function Certificado() {
 
             <h4 className="text-xl font-display font-bold mb-6">Omotenashi: A Arte Japonesa da Hospitalidade</h4>
 
-            <div className="w-32 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mb-6" />
+            <div className="w-32 h-0.5 bg-linear-to-r from-transparent via-amber-400 to-transparent mx-auto mb-6" />
 
             <div className="flex items-center justify-center gap-4 mb-4">
               <CheckCircle className="h-4 w-4 text-green-400" />

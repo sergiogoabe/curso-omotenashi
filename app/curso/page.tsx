@@ -87,7 +87,7 @@ export default function Curso() {
         </p>
       </div>
 
-      <div className="mb-8 p-6 rounded-xl border border-border/50 bg-gradient-to-r from-red-950/10 to-amber-950/10">
+      <div className="mb-8 p-6 rounded-xl border border-border/50 bg-linear-to-r from-red-950/10 to-amber-950/10">
         <div className="flex items-start gap-4">
           <BookOpen className="h-10 w-10 text-amber-400 shrink-0" />
           <div>

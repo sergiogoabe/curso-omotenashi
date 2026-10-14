@@ -120,10 +120,10 @@ export default function AdminUsuarios() {
                     </td>
                     <td className="py-3 px-2">
                       <div className="flex gap-1">
-                        <button onClick={() => toggleRole(u.id, u.role)} className="p-1 rounded hover:bg-secondary/50 text-xs text-muted-foreground hover:text-foreground" title="Alternar função">
+                        <button onClick={() => toggleRole(u.id, u.role)} className="p-1 rounded-sm hover:bg-secondary/50 text-xs text-muted-foreground hover:text-foreground" title="Alternar função">
                           <Shield className="h-3 w-3" />
                         </button>
-                        <button onClick={() => deleteUser(u.id)} className="p-1 rounded hover:bg-secondary/50 text-xs text-red-400" title="Remover">
+                        <button onClick={() => deleteUser(u.id)} className="p-1 rounded-sm hover:bg-secondary/50 text-xs text-red-400" title="Remover">
                           <Trash2 className="h-3 w-3" />
                         </button>
                       </div>

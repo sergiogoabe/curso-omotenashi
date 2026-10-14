@@ -85,7 +85,7 @@ export default function EmpresaDashboard() {
       </div>
 
       <div className="w-full h-2 bg-secondary rounded-full mb-8 overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-red-500 to-amber-400 rounded-full transition-all" style={{ width: `${stats.avgProgress}%` }} />
+        <div className="h-full bg-linear-to-r from-red-500 to-amber-400 rounded-full transition-all" style={{ width: `${stats.avgProgress}%` }} />
       </div>
 
       <Card className="border-border/50">
@@ -124,7 +124,7 @@ export default function EmpresaDashboard() {
 
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-red-500 to-amber-400 rounded-full transition-all" style={{ width: `${emp.progressPercent}%` }} />
+                    <div className="h-full bg-linear-to-r from-red-500 to-amber-400 rounded-full transition-all" style={{ width: `${emp.progressPercent}%` }} />
                   </div>
                   <span className="text-sm font-medium w-12 text-right">{emp.progressPercent}%</span>
                 </div>

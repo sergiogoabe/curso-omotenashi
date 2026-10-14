@@ -44,7 +44,7 @@ export default function LeadsPage() {
     <div>
       {/* Hero */}
       <section className="relative min-h-[80vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-red-950/40 via-background to-background" />
+        <div className="absolute inset-0 bg-linear-to-b from-red-950/40 via-background to-background" />
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <Badge variant="accent" className="mb-6 text-sm px-4 py-1.5">
@@ -91,7 +91,7 @@ export default function LeadsPage() {
 
             {/* Form */}
             <div className="md:col-span-3">
-              <Card className="border-red-500/30 bg-gradient-to-b from-red-950/10 to-card/50">
+              <Card className="border-red-500/30 bg-linear-to-b from-red-950/10 to-card/50">
                 <CardHeader>
                   <CardTitle className="text-2xl font-display">Quero Transformar Meu Atendimento</CardTitle>
                   <CardDescription>Preencha e falaremos com você pelo WhatsApp</CardDescription>
@@ -118,7 +118,7 @@ export default function LeadsPage() {
                       <Label htmlFor="size">Funcionários</Label>
                       <select
                         id="size"
-                        className="flex h-10 w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="flex h-10 w-full rounded-md border border-border bg-secondary px-3 py-2 text-sm ring-offset-background focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         value={form.size}
                         onChange={e => update("size", e.target.value)}
                         required
