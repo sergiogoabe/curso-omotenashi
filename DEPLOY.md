@@ -2,7 +2,7 @@
 
 ## Status Geral: 🟢 PRONTO PARA PRODUÇÃO
 
-Última auditoria: $(date +%Y-%m-%d)
+Última auditoria: 2026-10-14
 
 ---
 
@@ -42,9 +42,7 @@
 - ⚠️ **OBS-01** Sentry recomendado (ver instruções abaixo)
 
 ### 📦 Dependencies
-- ⚠️ **DEP-04** 11 vulnerabilidades em dev dependencies (não afetam produção)
-  - Principalmente em tailwindcss e prisma
-  - Monitorar atualizações futuras
+- ✅ **DEP-04** 0 vulnerabilidades (`npm audit` limpo; overrides de `effect`/`deepmerge-ts` aplicados)
 
 ---
 
@@ -85,11 +83,12 @@ Install Command: npm install
 
 3. **Deploy**
 ```bash
-# Via CLI
-npm run deploy
+# Automático via GitHub
+# Push/merge no branch master → deploy de PRODUÇÃO
+# (Vercel Production Branch = master)
 
-# Ou via GitHub
-# Push para main → auto-deploy
+# Manual via CLI
+npm run deploy
 ```
 
 ---
