@@ -8,6 +8,7 @@
     "test:integration": "node tests/integration.cjs",
     "typecheck": "tsc --noEmit --incremental false",
     "build": "npx prisma generate && next build --webpack",
+    "vercel-build": "npx prisma generate && if [ \"$VERCEL_ENV\" = \"production\" ]; then npx prisma migrate deploy; fi && next build --webpack",
     "db:push": "prisma db push",
     "db:seed": "npx tsx --experimental-wasm-modules -e \"fetch('https://curso-omotenashi.vercel.app/api/seed').then(r=>r.json()).then(console.log).catch(console.error)\"",
     "start": "next start",

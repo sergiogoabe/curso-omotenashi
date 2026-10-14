@@ -10,6 +10,10 @@ const securityHeaders = [
 
 const nextConfig = {
   outputFileTracingRoot: __dirname,
+  outputFileTracingIncludes: {
+    "/**": ["./node_modules/.prisma/client/**"],
+    "/api/**": ["./node_modules/.prisma/client/**"],
+  },
   poweredByHeader: false,
   // No next/image remote sources are used by this app. Do not expose an
   // unrestricted server-side image proxy for arbitrary remote hosts.
