@@ -13,7 +13,7 @@
     "db:seed": "npx tsx --experimental-wasm-modules -e \"fetch('https://curso-omotenashi.vercel.app/api/seed').then(r=>r.json()).then(console.log).catch(console.error)\"",
     "start": "next start",
     "postinstall": "",
-    "deploy": "node ./node_modules/.bin/vercel deploy --prod --yes"
+    "deploy": "vercel deploy --prod --yes"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",

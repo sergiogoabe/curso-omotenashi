@@ -7,3 +7,17 @@ node_modules
 *.tsbuildinfo
 *.log
 .pi
+
+# Editor / project backups
+*.save
+*.bak
+*.orig
+*.tmp
+
+# AndroidIDE-generated Gradle artifacts (this is a Next.js web app)
+.gradle
+gradle
+gradle.properties
+gradlew
+gradlew.bat
+local.properties
