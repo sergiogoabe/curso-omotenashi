@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     url: "/",
     images: [
       {
-        url: "/og-image.png",
+        url: "/og.png",
         width: 1200,
         height: 630,
         alt: "Omotenashi - A Arte Japonesa da Hospitalidade",
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Omotenashi Curso | A Arte Japonesa da Hospitalidade",
     description: "Transforme seu atendimento ao cliente com o curso Omotenashi. +2.500 alunos, 150+ empresas.",
-    images: ["/og-image.png"],
+    images: ["/og.png"],
   },
   icons: {
     icon: "/icon.svg",

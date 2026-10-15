@@ -31,7 +31,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Já existe um cadastro pendente com outros dados. Entre em contato." }, { status: 409 })
     }
     const pending = existingPending ?? await prisma.pendingRegistration.create({
-      data: { name, email, password: await bcrypt.hash(password, 12), plan, value: planConfig.value / 100 },
+      data: { name, email, password: await bcrypt.hash(password, 12), plan, value: planConfig.value },
     })
     const session = await getStripe().checkout.sessions.create({
       payment_method_types: ["card", "pix"],
@@ -43,7 +43,7 @@ export async function POST(req: Request) {
               name: `Curso Omotenashi - ${planConfig.label}`,
               description: planConfig.description,
             },
-            unit_amount: planConfig.value,
+            unit_amount: planConfig.valueInCents,
           },
           quantity: 1,
         },
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
         email,
         name,
         plan,
-        value: planConfig.value / 100,
+        value: planConfig.value,
         status: "pending",
         paymentMethod: "stripe",
       },

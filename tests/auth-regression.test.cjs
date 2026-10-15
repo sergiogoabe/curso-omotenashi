@@ -184,7 +184,7 @@ test('checkout keeps password hash local and sends stable registration metadata'
   } } } }
   const { POST } = load('app/api/stripe/checkout/route.ts', {
     '@/lib/prisma': { prisma },
-    '@/lib/stripe': { stripe, PLANS: { individual: { label: 'Individual', description: 'Teste', value: 19700 } } },
+    '@/lib/stripe': { getStripe: () => stripe, PLANS: { individual: { label: 'Individual', description: 'Teste', value: 197, valueInCents: 19700 } } },
     '@/lib/registration': { registrationSchema },
     '@/lib/rate-limit': { rateLimit: async () => ({ ok: true, remaining: 99, retryAfter: 0 }), clientIp: () => 'unit', tooMany: () => new Response(null, { status: 429 }) },
   }, { process: { env: { STRIPE_SECRET_KEY: 'synthetic-unit-fixture' } } })

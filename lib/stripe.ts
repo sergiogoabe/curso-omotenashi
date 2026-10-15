@@ -1,4 +1,7 @@
 import Stripe from "stripe"
+import { PLANS, type PlanId } from "./plans"
+
+export { PLANS } from "./plans"
 
 let _stripe: Stripe | undefined
 
@@ -22,17 +25,10 @@ export function getStripe(): Stripe {
   return _stripe
 }
 
-export const PLANS: Record<string, { label: string; value: number; description: string }> = {
-  individual: { label: "Individual", value: 19700, description: "Acesso vitalício ao curso para 1 aluno" },
-  empresarial30: { label: "Empresarial 30", value: 149700, description: "Até 30 colaboradores com suporte prioritário" },
-  empresarial50: { label: "Empresarial 50", value: 249700, description: "Até 50 colaboradores com suporte VIP" },
-  combo: { label: "Combo Empresarial", value: 320000, description: "Curso + consultoria presencial" },
-}
-
 export function getPlanValueInCents(planId: string): number {
-  return PLANS[planId]?.value || 19700
+  return PLANS[planId as PlanId]?.valueInCents || PLANS.individual.valueInCents
 }
 
 export function getPlanLabel(planId: string): string {
-  return PLANS[planId]?.label || "Individual"
+  return PLANS[planId as PlanId]?.label || PLANS.individual.label
 }

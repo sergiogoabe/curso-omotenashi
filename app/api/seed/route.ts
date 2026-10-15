@@ -2303,7 +2303,7 @@ Avaliadores treinados que vivenciam o serviço como clientes e avaliam:
           const user = await prisma.user.create({
             data: { name: u.name, email: u.email, password: hash, phone: u.phone, companyId: company.id },
           })
-          await prisma.enrollment.create({ data: { userId: user.id, plan: "business", active: true } })
+          await prisma.enrollment.create({ data: { userId: user.id, plan: "empresarial50", active: true } })
         }
       }
     }

@@ -74,7 +74,7 @@ export default function AdminOverview() {
           <CardContent className="space-y-2 text-sm">
             <InfoRow label="Plataforma" value="Curso Omotenashi" />
             <InfoRow label="Banco" value="Neon PostgreSQL" />
-            <InfoRow label="Planos" value="R$197 / R$2.497" />
+            <InfoRow label="Planos" value="R$197 / R$1.497 / R$2.497 / R$3.200" />
             <InfoRow label="Admin" value="admin@omotenashi.com" />
           </CardContent>
         </Card>

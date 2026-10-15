@@ -4,15 +4,9 @@ import { prisma } from "@/lib/prisma"
 import { registrationSchema } from "@/lib/registration"
 import { gerarPixPayload } from "@/lib/pix"
 import { rateLimit, clientIp, tooMany } from "@/lib/rate-limit"
+import { PLANS } from "@/lib/plans"
 
 export const runtime = "nodejs"
-
-const PLANS: Record<string, { label: string; value: number }> = {
-  individual: { label: "Individual", value: 197.0 },
-  empresarial30: { label: "Empresarial 30 func.", value: 1497.0 },
-  empresarial50: { label: "Empresarial 50 func.", value: 2497.0 },
-  combo: { label: "Combo Empresarial", value: 3200.0 },
-}
 
 export async function POST(req: Request) {
   try {

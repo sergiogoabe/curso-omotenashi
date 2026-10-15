@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { getPlanValue } from "@/lib/plans"
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -14,10 +15,9 @@ export async function GET() {
   const stats = {
     total: enrollments.length,
     individual: enrollments.filter(e => e.plan === "individual").length,
-    business: enrollments.filter(e => e.plan === "business").length,
+    business: enrollments.filter(e => e.plan !== "individual").length,
     active: enrollments.filter(e => e.active).length,
-    revenue: enrollments.filter(e => e.plan === "individual").length * 197 +
-             enrollments.filter(e => e.plan === "business").length * 2497,
+    revenue: enrollments.reduce((sum, e) => sum + getPlanValue(e.plan), 0),
   }
 
   return NextResponse.json({ enrollments, stats })

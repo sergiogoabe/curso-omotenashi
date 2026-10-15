@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, DollarSign, Users, TrendingUp, Filter, CheckCircle, XCircle } from "lucide-react"
+import { PLANS, PLAN_IDS, getPlan } from "@/lib/plans"
 
 export default function AdminVendas() {
   const [data, setData] = useState<any>(null)
@@ -83,8 +84,9 @@ export default function AdminVendas() {
                 className="h-9 rounded-md border border-border bg-secondary px-3 text-sm"
               >
                 <option value="all">Todos os planos</option>
-                <option value="individual">Individual</option>
-                <option value="business">Corporativo</option>
+                {PLAN_IDS.map((id) => (
+                  <option key={id} value={id}>{PLANS[id].label}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -108,8 +110,8 @@ export default function AdminVendas() {
                     <td className="py-3 px-2">{e.user?.name || "—"}</td>
                     <td className="py-3 px-2 text-muted-foreground">{e.user?.email}</td>
                     <td className="py-3 px-2">
-                      <Badge variant={e.plan === "business" ? "accent" : "secondary"}>
-                        {e.plan === "business" ? "Corporativo" : "Individual"}
+                      <Badge variant={e.plan === "individual" ? "secondary" : "accent"}>
+                        {getPlan(e.plan).label}
                       </Badge>
                     </td>
                     <td className="py-3 px-2">
@@ -120,7 +122,7 @@ export default function AdminVendas() {
                       )}
                     </td>
                     <td className="py-3 px-2 text-muted-foreground">{new Date(e.createdAt).toLocaleDateString("pt-BR")}</td>
-                    <td className="py-3 px-2 font-medium">R$ {e.plan === "business" ? "2.497" : "197"}</td>
+                    <td className="py-3 px-2 font-medium">R$ {getPlan(e.plan).value.toLocaleString("pt-BR")}</td>
                   </tr>
                 ))}
               </tbody>
