@@ -36,21 +36,23 @@ export async function POST(req: Request) {
     const session = await getStripe().checkout.sessions.create({
       payment_method_types: ["card", "pix"],
       line_items: [
-        {
-          price_data: {
-            currency: "brl",
-            product_data: {
-              name: `Curso Omotenashi - ${planConfig.label}`,
-              description: planConfig.description,
+        planConfig.priceId
+          ? { price: planConfig.priceId, quantity: 1 }
+          : {
+              price_data: {
+                currency: "brl",
+                product_data: {
+                  name: `Curso Omotenashi - ${planConfig.label}`,
+                  description: planConfig.description,
+                },
+                unit_amount: planConfig.valueInCents,
+              },
+              quantity: 1,
             },
-            unit_amount: planConfig.valueInCents,
-          },
-          quantity: 1,
-        },
       ],
       mode: "payment",
-      success_url: `${process.env.NEXT_PUBLIC_BASE_URL || "https://curso-omotenashi.vercel.app"}/auth/pagamento/sucesso?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || "https://curso-omotenashi.vercel.app"}/auth/register`,
+      success_url: `${(process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://curso-omotenashi.vercel.app")}/auth/pagamento/sucesso?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${(process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://curso-omotenashi.vercel.app")}/auth/register`,
       customer_email: pending.email,
       metadata: {
         plan: pending.plan,
