@@ -21,3 +21,5 @@ gradle.properties
 gradlew
 gradlew.bat
 local.properties
+.env*
+.tmp/

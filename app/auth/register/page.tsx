@@ -13,6 +13,14 @@ const PIX_KEY = "07030124600"
 
 const PLANS = [
   {
+    id: "free",
+    label: "Plano Free",
+    desc: "Acesso inicial",
+    value: 2.0,
+    icon: User,
+    badge: "COMECE AQUI",
+  },
+  {
     id: "individual",
     label: "Individual",
     desc: "Para profissionais",

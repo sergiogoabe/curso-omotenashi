@@ -1,14 +1,17 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useSession, signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 
 export function Header() {
   const { data: session } = useSession()
+  const pathname = usePathname()
   const [open, setOpen] = useState(false)
   const [hasCompany, setHasCompany] = useState(false)
+  const headerRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     if (session?.user) {
@@ -18,8 +21,38 @@ export function Header() {
     }
   }, [session])
 
+  useEffect(() => {
+    setOpen(false)
+  }, [pathname])
+
+  useEffect(() => {
+    if (!open) return
+
+    function handleClickOutside(event: MouseEvent) {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false)
+    }
+    function handleScroll() {
+      setOpen(false)
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    document.addEventListener("keydown", handleKeyDown)
+    window.addEventListener("scroll", handleScroll, { passive: true })
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("keydown", handleKeyDown)
+      window.removeEventListener("scroll", handleScroll)
+    }
+  }, [open])
+
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
+    <header ref={headerRef} className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 group">
           <span className="text-2xl inline-block group-hover:animate-bounce transition-all duration-300">⛩️</span>
@@ -71,7 +104,12 @@ export function Header() {
           )}
         </nav>
 
-        <button className="md:hidden text-2xl" onClick={() => setOpen(!open)}>
+        <button
+          className="md:hidden text-2xl"
+          aria-label={open ? "Fechar menu" : "Abrir menu"}
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+        >
           {open ? "✕" : "☰"}
         </button>
       </div>

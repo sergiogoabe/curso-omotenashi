@@ -1,4 +1,11 @@
 export const PLANS = {
+  free: {
+    label: "Plano Free",
+    value: 2,
+    valueInCents: 200,
+    priceId: (process.env.STRIPE_PRICE_ID_FREE ?? "price_1UQrVjBQnjylkI7pgP9SDuv7") as string | undefined,
+    description: "Acesso inicial ao Omotenashi",
+  },
   individual: {
     label: "Individual",
     value: 197,
