@@ -10,7 +10,7 @@
     "build": "node node_modules/prisma/build/index.js generate && node node_modules/next/dist/bin/next build --webpack",
     "vercel-build": "node node_modules/prisma/build/index.js generate && if [ \"$VERCEL_ENV\" = \"production\" ]; then node node_modules/prisma/build/index.js migrate deploy; fi && node node_modules/next/dist/bin/next build --webpack",
     "db:push": "node node_modules/prisma/build/index.js db push",
-    "db:seed": "npx tsx --experimental-wasm-modules -e \"fetch('https://curso-omotenashi.vercel.app/api/seed').then(r=>r.json()).then(console.log).catch(console.error)\"",
+    "db:seed": "node scripts/seed.ts",
     "start": "next start",
     "postinstall": "",
     "deploy": "vercel deploy --prod --yes"

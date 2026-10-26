@@ -66,7 +66,7 @@ Todo o bloco técnico passou nas checagens executadas nesta data. Restam **açõ
 
 **6. Limpeza de configuração:** as variáveis legadas `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` e `STRIPE_PRICE_ID_FREE` foram **removidas do projeto na Vercel (Production)** e o bloco correspondente saiu do `.env.example` (Stripe não existe mais no código).
 
-## 🛑 BLOQUEADOR NOVO (2026-10-26) — banco de produção VAZIO
+## 🛑 (histórico) BLOQUEADOR ENCONTRADO — banco de produção VAZIO
 
 Contagem direta no banco de produção (Prisma + `DATABASE_URL` de Production):
 
@@ -76,7 +76,15 @@ Contagem direta no banco de produção (Prisma + `DATABASE_URL` de Production):
 
 - O site em produção está **sem conteúdo**: `/api/lessons` e `/api/ebook` devolvem `[]`, então `/curso` e `/ebook` abrem vazios para quem tem matrícula.
 - O único caminho de seed é `app/api/seed/route.ts`, que **se auto-bloqueia em produção** (`NODE_ENV === "production"` → 403) e ainda exige sessão admin. Ou seja: hoje **não há como popular o banco de produção pelo app**.
-- Precisa de decisão: rodar o seed contra o banco de produção (script/CLI reutilizando o conteúdo de `app/api/seed/route.ts`) ou gerar o conteúdo por outro caminho. Sem isso não há curso para vender.
+## ✅ RESOLVIDO (2026-10-26) — conteúdo de produção semeado
+
+Estado anterior (medido direto no banco de produção): `{ users: 0, enrollments: 0, lessons: 0, categories: 0, ebookChapters: 0, pendingRegistrations: 0, payments: 0 }` — o site estava **sem conteúdo** e o único seed (`app/api/seed`) se auto-bloqueia em produção.
+
+Correção aplicada:
+- Conteúdo extraído de `app/api/seed/route.ts` para **`lib/seed-data.ts`** (`seedContent()`), fonte única usada pela rota (dev) e pelo novo CLI.
+- Novo **`scripts/seed.ts`** + script **`npm run db:seed`**. Idempotente (categorias/capítulos por slug, aulas por `upsert`), aceita `--dry-run` e **não cria usuários** (a rota antiga criava admin e 3 contas de demonstração).
+- Executado contra o banco de produção: **8 categorias, 30 aulas, 13 capítulos**. Verificado ao vivo: `GET /api/lessons` → 30, `GET /api/ebook` → 13, e `GET /api/lessons?slug=…` / `GET /api/ebook?slug=…` anônimos → **403** (gate por matrícula funcionando).
+- Uso futuro: `node --env-file=.env.production scripts/seed.ts [--dry-run]`.
 
 ## 🚨 AÇÃO URGENTE — chaves expostas nesta sessão (rotacionar):
 
