@@ -59,12 +59,24 @@ Todo o bloco técnico passou nas checagens executadas nesta data. Restam **açõ
 - Payload PIX gerado por `lib/pix.ts` decodificado: campos EMV completos (`00`, `26`, `52`, `53`, `54`, `58`, `59`, `60`, `62`, `63`), **CRC16 válido**, valor correto (`197.00`), país/moeda corretos, apenas ASCII.
 - `POST /api/ativar` com código de 8 hex contra o banco de produção: **200 `{"success":true}`**, criou `User` + `Enrollment`, apagou o `PendingRegistration`; login com a senha do cadastro retornou sessão e `/curso` respondeu **200**. Código inexistente → 400. Registros de QA removidos depois.
 - **Achados (não corrigidos, precisam de decisão de produto):**
-  1. A conta ativada nasce com `courseAccess=false` / `coursePlan=null`, e **nenhum código lê `courseAccess`** — o gate de `/curso`, `/dashboard`, `/forum` e `/ebook` é só “estar logado” (middleware). Ou seja: qualquer aluno logado acessa o curso, independente do plano pago.
+  1. ~~Nenhum gate de acesso ao curso~~ — **CORRIGIDO: afirmação anterior era falsa.** O gate existe e é server-side em `lib/course-access.ts` (`hasCourseAccess()`: sessão + `Enrollment` com `active:true` e `expiresAt` nulo/futuro; admin sempre passa), usado por `app/api/lessons` (com `slug`), `app/api/ebook` (com `slug`), `app/api/progress` (escrita), `app/api/forum/topics` e `app/api/forum/posts`. Além disso as páginas `/curso`, `/curso/[lessonId]`, `/ebook` e `/ebook/[chapterId]` checam `GET /api/enroll` no client. Verificado ao vivo: `GET /api/forum/topics` anônimo → **403**. O que fica público são apenas **listas** (títulos/slugs de aulas e capítulos, sem conteúdo) — decisão aceitável. Os campos `User.courseAccess`/`coursePlan` são legado e não são lidos em lugar nenhum (a fonte de verdade é `Enrollment`); preenchê-los na ativação é opcional.
   2. A chave PIX está **hardcoded** em `lib/pix.ts` (`07030124600`); `NEXT_PUBLIC_PIX_KEY` existe na Vercel mas **não é usada** — conferir se é a mesma chave que deve receber os pagamentos.
   3. O cadastro (`/api/register`) devolve PIX estático (chave/CRC local) e **não** cria cobrança no Asaas, embora `ASAAS_*` esteja configurado e o webhook `/api/webhooks/asaas` libere acesso. São dois caminhos de pagamento paralelos — escolher um para o lançamento.
   4. O `activationCode` só nasce quando o admin clica em gerar em `/admin/ativacoes`; sem esse passo manual o aluno que pagou não consegue ativar.
 
 **6. Limpeza de configuração:** as variáveis legadas `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` e `STRIPE_PRICE_ID_FREE` foram **removidas do projeto na Vercel (Production)** e o bloco correspondente saiu do `.env.example` (Stripe não existe mais no código).
+
+## 🛑 BLOQUEADOR NOVO (2026-10-26) — banco de produção VAZIO
+
+Contagem direta no banco de produção (Prisma + `DATABASE_URL` de Production):
+
+```
+{ users: 0, enrollments: 0, lessons: 0, categories: 0, ebookChapters: 0, pendingRegistrations: 0, payments: 0 }
+```
+
+- O site em produção está **sem conteúdo**: `/api/lessons` e `/api/ebook` devolvem `[]`, então `/curso` e `/ebook` abrem vazios para quem tem matrícula.
+- O único caminho de seed é `app/api/seed/route.ts`, que **se auto-bloqueia em produção** (`NODE_ENV === "production"` → 403) e ainda exige sessão admin. Ou seja: hoje **não há como popular o banco de produção pelo app**.
+- Precisa de decisão: rodar o seed contra o banco de produção (script/CLI reutilizando o conteúdo de `app/api/seed/route.ts`) ou gerar o conteúdo por outro caminho. Sem isso não há curso para vender.
 
 ## 🚨 AÇÃO URGENTE — chaves expostas nesta sessão (rotacionar):
 
@@ -81,7 +93,7 @@ Mesmo o Stripe estando fora do código, ambas são credenciais válidas contra s
 | # | Item | Por que bloqueia | Onde resolver |
 |---|------|---------|----------|
 | 1 | Rotacionar `STRIPE_SECRET_KEY` live e senha do Neon | Chaves expostas em output de sessão (acima). Neon: dashboard do Neon → reset password → atualizar `DATABASE_URL`/`_UNPOOLED` no Vercel | Stripe Dashboard + Neon + Vercel |
-| 2 | **Verificação do domínio no Resend** | `RESEND_API_KEY` já está configurada em Production/Development (deploy feito) e o envio chega até o Resend. Falta publicar no DNS de `infinity-agency.online`: TXT `resend._domainkey` (DKIM), MX `send` → `feedback-smtp.sa-east-1.amazonses.com` (prio 10) e TXT `send` → `v=spf1 include:amazonses.com ~all`. Depois `POST /domains/{id}/verify` e, com o domínio verificado, criar `EMAIL_FROM` (`Omotenashi <no-reply@infinity-agency.online>`) e redeploy | Painel DNS do domínio + Resend |
+| 2 | **Verificação do domínio no Resend (DNS pendente)** | `RESEND_API_KEY` está em Production/Development, o envio chega ao Resend, e a verificação já foi **disparada** (`POST /domains/2aaf4c59…/verify` → 200). O domínio está `pending` porque os 3 registros **não existem no DNS**: o domínio `infinity-agency.online` usa nameservers **GoDaddy** (`ns09/ns10.domaincontrol.com`) e a consulta DNS (Google DoH) retorna NXDOMAIN para `resend._domainkey` e para `send`. Registros a criar: TXT `resend._domainkey` (DKIM), MX `send` → `feedback-smtp.sa-east-1.amazonses.com` (prio 10) e TXT `send` → `v=spf1 include:amazonses.com ~all`. Com o domínio verificado: criar `EMAIL_FROM` (`Omotenashi <no-reply@infinity-agency.online>`) e redeploy | GoDaddy → DNS + Resend |
 | 3 | Variáveis de produção na Vercel | **Confirmado presentes** (exceto `RESEND_API_KEY`/`EMAIL_FROM`): `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `NEXTAUTH_SECRET`, `NEXT_PUBLIC_APP_URL`, `ASAAS_API_KEY`, `ASAAS_ENV`, `ASAAS_WEBHOOK_SECRET`, `ADMIN_USERNAME`/`ADMIN_PASSWORD`, `UPSTASH_REDIS_REST_URL/TOKEN`. Vars legadas de Stripe ainda existem no painel (inofensivas) e podem ser removidas | Vercel → Settings → Environment Variables |
 | 4 | Webhook Asaas registered | URL de produção `https://<dominio>/api/webhooks/asaas` registrada no painel Asaas, com a mesma `ASAAS_WEBHOOK_SECRET` | Painel Asaas → Integrações → Webhook |
 | 5 | Uptime monitoring | `/api/health` é público e já responde 200/503 corretamente, mas nenhum monitor externo aponta para ele | UptimeRobot/BetterStack (monitor HTTP em `https://curso-omotenashi.vercel.app/api/health`, alerta quando status ≠ 200) |
