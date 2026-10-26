@@ -1,37 +1,27 @@
 export const PLANS = {
   free: {
-    label: "Plano Free",
+    label: "Omotenashi - Plano Free",
     value: 2,
-    valueInCents: 200,
-    priceId: (process.env.STRIPE_PRICE_ID_FREE ?? "price_1UQrVjBQnjylkI7pgP9SDuv7") as string | undefined,
     description: "Acesso inicial ao Omotenashi",
   },
   individual: {
-    label: "Individual",
+    label: "Omotenashi - Plano Pessoal",
     value: 197,
-    valueInCents: 19700,
-    priceId: "price_1UQjS0BQnjylkI7pqLOe4Whe" as string | undefined,
     description: "Acesso vitalício ao curso para 1 aluno",
   },
   empresarial30: {
-    label: "Empresarial 30",
+    label: "Omotenashi - Plano Empresarial Basic",
     value: 1497,
-    valueInCents: 149700,
-    priceId: undefined as string | undefined,
     description: "Até 30 colaboradores com suporte prioritário",
   },
   empresarial50: {
-    label: "Empresarial 50",
+    label: "Omotenashi - Plano Empresarial Starter",
     value: 2497,
-    valueInCents: 249700,
-    priceId: "price_1UQjSkBQnjylkI7pbRcr8BT6" as string | undefined,
     description: "Até 50 colaboradores com suporte VIP",
   },
   combo: {
-    label: "Combo Empresarial",
+    label: "Omotenashi - Plano Empresarial Premium",
     value: 3200,
-    valueInCents: 320000,
-    priceId: undefined as string | undefined,
     description: "Curso + consultoria presencial",
   },
 } as const

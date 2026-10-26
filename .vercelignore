@@ -7,3 +7,7 @@ node_modules
 *.log
 *.tsbuildinfo
 tsconfig.tsbuildinfo
+.freebuff
+cursor-free-vip-termux
+proposta
+*.pdf

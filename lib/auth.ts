@@ -4,6 +4,17 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { rateLimit } from "@/lib/rate-limit"
+import { createHash, timingSafeEqual } from "node:crypto"
+
+/** Constant-time string compare; avoids leaking the secret length/prefix via timing. */
+function secretEquals(a: string, b: string): boolean {
+  const bufA = Buffer.from(a, "utf8")
+  const bufB = Buffer.from(b, "utf8")
+  // timingSafeEqual requires equal lengths, so pad with a hash-based comparison.
+  const hashA = createHash("sha256").update(bufA).digest()
+  const hashB = createHash("sha256").update(bufB).digest()
+  return timingSafeEqual(hashA, hashB) && bufA.length === bufB.length
+}
 
 function ipFromNextAuthReq(req: unknown): string {
   const h = (req as { headers?: Record<string, string | string[] | undefined> } | undefined)?.headers
@@ -35,7 +46,7 @@ export const authOptions: NextAuthOptions = {
           adminUsername &&
           adminPassword &&
           identifier === adminUsername &&
-          credentials.password === adminPassword
+          secretEquals(credentials.password, adminPassword)
         ) {
           return {
             id: "admin",

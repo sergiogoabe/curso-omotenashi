@@ -1,5 +1,17 @@
 # Verificação de produção
 
+## Revisão em 2026-10-18
+
+- Site publicado (`https://curso-omotenashi.vercel.app/`): HTTP 200.
+- Health check publicado: HTTP 200, banco reportado como conectado (resposta em aproximadamente 880 ms).
+- `npm test`: 25/25 antes desta revisão; `npm run typecheck`: passou.
+- `npm run test:integration`: 15/15 com PostgreSQL isolado, sem pagamentos externos.
+- `npm run build`: o wrapper `npx prisma generate` falhou no Termux (`sh: 1: prisma: not found`). Executados diretamente os mesmos estágios: `node node_modules/prisma/build/index.js generate` gerou o Prisma Client e `node node_modules/next/dist/bin/next build --webpack` concluiu o build. O Next reportou apenas os avisos de middleware legado e `z-index` não suportado. O build do commit pela pipeline da Vercel não foi verificado.
+- `npm audit --omit=dev`: indisponível porque o endpoint de auditoria do npm falhou; não interpretar como auditoria limpa.
+- Ajustado o endpoint público de health para não expor ambiente nem mensagem interna do banco em falha.
+
+**Decisão:** o ambiente publicado responde, mas produção real não está completamente validada. Antes de considerar o fluxo comercial pronto, confirmar na Vercel/Stripe que chaves secret/publicável/webhook são todas live e do mesmo modo, conferir migrations aplicadas no banco publicado, e executar um checkout de homologação controlado. Nenhuma cobrança, deploy ou alteração ao banco publicado foi executada nesta revisão.
+
 ## Status desta passada (hardening para produção)
 
 Aplicado no código (build, typecheck e 25/25 testes passando):

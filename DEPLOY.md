@@ -1,8 +1,8 @@
 # ✅ CHECKLIST DE DEPLOY — PRODUÇÃO
 
-## Status Geral: 🟢 PRONTO PARA PRODUÇÃO
+## Status Geral: 🟡 EM PRODUÇÃO, COM VALIDAÇÕES PENDENTES
 
-Última auditoria: 2026-10-14
+Revisado em 2026-10-18. O site publicado e o health check responderam com HTTP 200; o endpoint reportou o banco conectado. Os testes locais unitários, typecheck e integração com PostgreSQL isolado passaram. Isso não valida credenciais/configuração de cobrança live, estado das migrations no banco publicado nem um checkout real. Não tratar esta lista como aprovação de lançamento até conferir os itens pendentes em `PRODUCAO.md`.
 
 ---
 
@@ -227,4 +227,4 @@ npm run build
 
 ---
 
-**Status:** ✅ CLEAR TO SHIP com configuração de Upstash Redis recomendada
+**Status:** PENDENTE — validar Stripe live, estado das migrations e variáveis de produção; o health check isolado não comprova esses fluxos.

@@ -23,3 +23,5 @@ gradlew.bat
 local.properties
 .env*
 .tmp/
+cursor-free-vip-termux/
+.freebuff/

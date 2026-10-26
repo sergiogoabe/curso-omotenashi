@@ -16,6 +16,10 @@ model User {
   password      String?
   image         String?
   role          String    @default("student")
+  plan          String    @default("individual")
+  courseAccess   Boolean   @default(false)
+  coursePlan     String?
+  courseExpiresAt DateTime?
   emailVerified DateTime?
   phone         String?
   companyId     String?
@@ -27,6 +31,8 @@ model User {
   forumTopics   ForumTopic[]
   forumPosts    ForumPost[]
   payments      Payment[]
+  resetToken    String?
+  resetTokenExpiresAt DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -170,6 +176,7 @@ model Payment {
   value           Float    @default(197.0)
   status          String   @default("pending")
   paymentMethod   String   @default("pix")
+  asaasId        String?  @unique
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

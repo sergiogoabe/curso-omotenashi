@@ -74,6 +74,11 @@ export default function Login() {
             <Button type="submit" className="w-full gap-2" size="lg" disabled={loading}>
               {loading ? "Entrando..." : "Entrar"} <ArrowRight className="h-4 w-4" />
             </Button>
+            <p className="text-sm text-muted-foreground text-center">
+              <Link href="/auth/esqueci-senha" className="text-primary hover:underline">
+                Esqueci minha senha
+              </Link>
+            </p>
             <p className="text-sm text-muted-foreground">
               Não tem conta?{" "}
               <Link href="/auth/register" className="text-primary hover:underline">

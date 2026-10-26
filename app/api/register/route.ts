@@ -47,6 +47,26 @@ export async function POST(req: Request) {
       },
     })
 
+    // Sync to Infinity Agency Dashboard ERP
+    try {
+      await fetch(`${process.env.INFINITY_ERP_URL || 'https://erp.infinity-agency.online'}/api/col/omotenashi-users`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.INFINITY_DASHBOARD_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          email,
+          name,
+          plan: plan || 'individual',
+          status: 'pending_payment',
+          createdAt: new Date().toISOString()
+        })
+      });
+    } catch (err) {
+      console.warn('[ERP Sync] Failed to sync user:', err);
+    }
+
     return NextResponse.json({
       plan: plan || "individual",
       value: planConfig.value,

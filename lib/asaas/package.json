@@ -1,0 +1,17 @@
+{
+  "name": "@infinity/asaas",
+  "version": "1.0.0",
+  "description": "Biblioteca unificada Asaas para PIX - Infinity Agency",
+  "main": "asaas.ts",
+  "types": "asaas.ts",
+  "scripts": {
+    "test": "echo \"No tests yet\""
+  },
+  "dependencies": {
+    "crypto": "^1.0.1"
+  },
+  "peerDependencies": {},
+  "keywords": ["asaas", "pix", "payment", "brazil"],
+  "author": "Infinity Agency",
+  "license": "MIT"
+}

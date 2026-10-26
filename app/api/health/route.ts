@@ -26,7 +26,6 @@ export async function GET() {
       uptime: process.uptime(),
       database: "connected",
       responseTime: `${responseTime}ms`,
-      environment: process.env.NODE_ENV,
     }, { status: 200 })
     
   } catch (error) {
@@ -37,7 +36,6 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       database: "disconnected",
       responseTime: `${responseTime}ms`,
-      error: error instanceof Error ? error.message : "Unknown error",
     }, { status: 503 })
   }
 }

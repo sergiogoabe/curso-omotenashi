@@ -16,8 +16,8 @@ function load(file, mocks = {}, globals = {}) {
   return module.exports
 }
 
-const { registrationSchema } = load('lib/registration.ts')
-const { gerarPixPayload, crc16 } = load('lib/pix.ts')
+const { registrationSchema } = load('./lib/registration.ts')
+const { gerarPixPayload, crc16 } = load('./lib/pix.ts')
 const valid = { name: 'Aluno Teste', email: '  ALUNO@example.com ', password: 'teste123', plan: 'individual' }
 
 test('registration trims name and normalizes email', () => {
@@ -116,60 +116,8 @@ for (const [label, callback, expected] of [
   })
 }
 
-function paymentHarness(overrides = {}) {
-  const state = { status: 'pending', grants: 0, deleted: false }
-  const tx = {
-    payment: {
-      findUnique: async () => ({ id: 'payment', email: 'aluno@example.com', value: 197, plan: 'individual', status: state.status }),
-      updateMany: async () => { state.status = 'completed'; return { count: 1 } },
-      update: async () => ({}),
-    },
-    pendingRegistration: {
-      findUnique: async () => ({ id: 'pending', email: 'aluno@example.com', password: 'hashed', name: 'Aluno', value: 197, plan: 'individual' }),
-      delete: async () => { state.deleted = true },
-    },
-    user: { upsert: async () => ({ id: 'user' }) },
-    enrollment: { create: async () => { state.grants++ } },
-    ...overrides,
-  }
-  const prisma = { $transaction: async fn => {
-    const before = { ...state }
-    try { return await fn(tx) } catch (error) { Object.assign(state, before); throw error }
-  } }
-  const { fulfillPayment } = load('lib/fulfill-payment.ts', { '@/lib/prisma': { prisma } })
-  const checkout = { id: 'cs_test_123', payment_status: 'paid', currency: 'brl', amount_total: 19700, metadata: { registrationId: 'pending' } }
-  return { fulfillPayment, checkout, state }
-}
-test('unpaid checkout cannot grant access', async () => {
-  const h = paymentHarness()
-  assert.equal(await h.fulfillPayment({ ...h.checkout, payment_status: 'unpaid' }), false)
-  assert.equal(h.state.grants, 0)
-})
-test('duplicate confirmations grant exactly once', async () => {
-  const h = paymentHarness()
-  assert.equal(await h.fulfillPayment(h.checkout), true)
-  assert.equal(await h.fulfillPayment(h.checkout), true)
-  assert.equal(h.state.grants, 1)
-})
-test('wrong amount is rejected without granting access', async () => {
-  const h = paymentHarness()
-  await assert.rejects(h.fulfillPayment({ ...h.checkout, amount_total: 1 }), /amount mismatch/)
-  assert.equal(h.state.grants, 0)
-})
-test('legacy checkout never falls back to a default password', async () => {
-  const h = paymentHarness()
-  await assert.rejects(h.fulfillPayment({ ...h.checkout, metadata: {} }), /manual reconciliation/)
-  assert.equal(h.state.grants, 0)
-})
-test('failed enrollment rolls back payment claim', async () => {
-  const h = paymentHarness({ enrollment: { create: async () => { throw new Error('db failure') } } })
-  await assert.rejects(h.fulfillPayment(h.checkout), /db failure/)
-  assert.equal(h.state.status, 'pending')
-  assert.equal(h.state.deleted, false)
-})
-
-test('checkout keeps password hash local and sends stable registration metadata', async () => {
-  let persisted, payload, options
+test('Asaas checkout creates PIX payment without sending password', async () => {
+  let persisted, asaasResult
   const prisma = {
     user: { findUnique: async () => null },
     pendingRegistration: {
@@ -178,21 +126,50 @@ test('checkout keeps password hash local and sends stable registration metadata'
     },
     payment: { upsert: async () => ({}) },
   }
-  const stripe = { checkout: { sessions: { create: async (data, opts) => {
-    payload = data; options = opts
-    return { id: 'cs_test_fixture', url: 'https://checkout.stripe.com/test-fixture', status: 'open' }
-  } } } }
-  const { POST } = load('app/api/stripe/checkout/route.ts', {
+  const { gerarPixPayload } = load('./lib/pix.ts')
+  const { PLANS } = load('./lib/plans.ts')
+  const { POST } = load('app/api/register/route.ts', {
     '@/lib/prisma': { prisma },
-    '@/lib/stripe': { getStripe: () => stripe, PLANS: { individual: { label: 'Individual', description: 'Teste', value: 197, valueInCents: 19700 } } },
     '@/lib/registration': { registrationSchema },
     '@/lib/rate-limit': { rateLimit: async () => ({ ok: true, remaining: 99, retryAfter: 0 }), clientIp: () => 'unit', tooMany: () => new Response(null, { status: 429 }) },
-  }, { process: { env: { STRIPE_SECRET_KEY: 'synthetic-unit-fixture' } } })
-  const response = await POST(new Request('http://localhost/api/stripe/checkout', { method: 'POST', body: JSON.stringify(valid) }))
+    '@/lib/pix': { gerarPixPayload },
+    '@/lib/plans': { PLANS },
+  }, { process: { env: {} }, fetch: async () => ({ ok: true, json: async () => ({}) }) })
+  const response = await POST(new Request('http://localhost/api/register', { method: 'POST', body: JSON.stringify(valid) }))
   assert.equal(response.status, 200)
-  assert.equal(payload.metadata.registrationId, 'registration-test')
-  assert.equal(Object.hasOwn(payload.metadata, 'password'), false)
-  assert.equal(JSON.stringify(payload).includes(valid.password), false)
-  assert.equal(options.idempotencyKey, 'registration-registration-test')
-  assert.ok(await require('bcryptjs').compare(valid.password, persisted.password))
+  const body = await response.json()
+  // Password hash stored locally, never sent to payment provider
+  assert.ok(persisted.password.startsWith('$2'), 'password should be bcrypt hash')
+  assert.ok(!persisted.password.includes(valid.password), 'raw password not in hash')
+  // Response contains PIX payload and QR code, no password
+  assert.ok(body.pixPayload)
+  assert.ok(body.pixQR)
+  assert.equal(body.plan, 'individual')
+  assert.ok(!Object.hasOwn(body, 'password'))
+})
+
+function healthHarness(queryRaw) {
+  return load('app/api/health/route.ts', {
+    'next/server': { NextResponse: { json: (body, init) => Response.json(body, init) } },
+    '@/lib/prisma': { prisma: { $queryRaw: queryRaw } },
+  }, { process: { uptime: () => 1, env: { NODE_ENV: 'test' } } }).GET
+}
+
+test('health check reports database availability without exposing runtime details', async () => {
+  const response = await healthHarness(async () => 1)()
+  const body = await response.json()
+  assert.equal(response.status, 200, JSON.stringify(body))
+  assert.equal(body.status, 'ok')
+  assert.equal(body.database, 'connected')
+  assert.equal(Object.hasOwn(body, 'environment'), false)
+})
+
+test('health check hides database error details from public responses', async () => {
+  const response = await healthHarness(async () => { throw new Error('postgres://private-host:5432/internal') })()
+  const body = await response.json()
+  assert.equal(response.status, 503)
+  assert.equal(body.status, 'error')
+  assert.equal(body.database, 'disconnected')
+  assert.equal(JSON.stringify(body).includes('private-host'), false)
+  assert.equal(Object.hasOwn(body, 'error'), false)
 })

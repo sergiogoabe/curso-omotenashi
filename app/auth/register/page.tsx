@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Copy, Check, Loader2, ArrowRight, Building2, User, Users, CreditCard, Smartphone } from "lucide-react"
+import { Copy, Check, Loader2, ArrowRight, Building2, User, Users, Smartphone } from "lucide-react"
 
 const PIX_KEY = "07030124600"
 
@@ -53,12 +53,11 @@ const PLANS = [
 ]
 
 export default function Register() {
-  const [step, setStep] = useState<"form" | "pix" | "stripe">("form")
+  const [step, setStep] = useState<"form" | "pix">("form")
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [plan, setPlan] = useState("individual")
-  const [paymentMethod, setPaymentMethod] = useState<"pix" | "card">("pix")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -79,35 +78,6 @@ export default function Register() {
     }
     setLoading(true)
     setError("")
-
-    if (paymentMethod === "card") {
-      try {
-        const res = await fetch("/api/stripe/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(parsed.data),
-        })
-
-        const data = await res.json()
-
-        if (!res.ok) {
-          setError(data.error || "Não foi possível iniciar o pagamento")
-          setLoading(false)
-          return
-        }
-
-        if (data.url) {
-          window.location.href = data.url
-        } else {
-          setError("Erro ao redirecionar para pagamento")
-          setLoading(false)
-        }
-      } catch {
-        setError("Erro ao conectar com o servidor")
-        setLoading(false)
-      }
-      return
-    }
 
     try {
       const res = await fetch("/api/register", {
@@ -233,7 +203,7 @@ export default function Register() {
           <div className="text-4xl mb-4">⛩️</div>
           <CardTitle className="text-2xl">Criar Conta</CardTitle>
           <CardDescription>
-            Escolha o plano e a forma de pagamento
+            Escolha o plano e pague com PIX
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -273,44 +243,6 @@ export default function Register() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Forma de Pagamento</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("pix")}
-                  aria-pressed={paymentMethod === "pix"}
-                  className={`flex items-center gap-3 rounded-lg border p-3 transition-all ${
-                    paymentMethod === "pix"
-                      ? "border-red-500/50 bg-red-950/20"
-                      : "border-border/50 bg-card/50 hover:border-border"
-                  }`}
-                >
-                  <Smartphone className={`h-5 w-5 ${paymentMethod === "pix" ? "text-red-400" : "text-muted-foreground"}`} />
-                  <div className="text-left">
-                    <div className={`text-xs font-semibold ${paymentMethod === "pix" ? "text-foreground" : "text-muted-foreground"}`}>PIX</div>
-                    <div className="text-[10px] text-muted-foreground">QR Code ou chave</div>
-                  </div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("card")}
-                  aria-pressed={paymentMethod === "card"}
-                  className={`flex items-center gap-3 rounded-lg border p-3 transition-all ${
-                    paymentMethod === "card"
-                      ? "border-red-500/50 bg-red-950/20"
-                      : "border-border/50 bg-card/50 hover:border-border"
-                  }`}
-                >
-                  <CreditCard className={`h-5 w-5 ${paymentMethod === "card" ? "text-red-400" : "text-muted-foreground"}`} />
-                  <div className="text-left">
-                    <div className={`text-xs font-semibold ${paymentMethod === "card" ? "text-foreground" : "text-muted-foreground"}`}>Cartão / PIX</div>
-                    <div className="text-[10px] text-muted-foreground">Pagamento via Stripe</div>
-                  </div>
-                </button>
-              </div>
-            </div>
-
             {error && (
               <div className="bg-red-950/30 border border-red-500/20 text-red-400 text-sm rounded-lg p-3">
                 {error}
@@ -334,8 +266,6 @@ export default function Register() {
             <Button type="submit" className="w-full gap-2" size="lg" disabled={loading}>
               {loading ? (
                 <><Loader2 className="h-4 w-4 animate-spin" /> Processando...</>
-              ) : paymentMethod === "card" ? (
-                <><CreditCard className="h-4 w-4" /> Pagar com Cartão / PIX</>
               ) : (
                 "Gerar PIX para Pagamento"
               )}

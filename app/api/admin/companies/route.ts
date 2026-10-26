@@ -1,7 +1,21 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import { z } from "zod"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+
+// Allowlist: never spread a raw request body into prisma.company.update.
+const companyUpdateSchema = z
+  .object({
+    id: z.string().min(1),
+    name: z.string().min(1).max(200).optional(),
+    email: z.string().email().max(200).optional(),
+    phone: z.string().max(40).optional().nullable(),
+    cnpj: z.string().max(32).optional().nullable(),
+    plan: z.string().max(64).optional(),
+    active: z.boolean().optional(),
+  })
+  .strict()
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -57,7 +71,9 @@ export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session || (session.user as any)?.role !== "admin") return NextResponse.json({ error: "negado" }, { status: 403 })
 
-  const { id, ...data } = await req.json()
+  const parsed = companyUpdateSchema.safeParse(await req.json())
+  if (!parsed.success) return NextResponse.json({ error: "dados inválidos" }, { status: 400 })
+  const { id, ...data } = parsed.data
   const updated = await prisma.company.update({ where: { id }, data })
   return NextResponse.json(updated)
 }
