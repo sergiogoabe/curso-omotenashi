@@ -46,6 +46,26 @@ Todo o bloco técnico passou nas checagens executadas nesta data. Restam **açõ
 - `forgot-password` → 200 genérico (anti-enumeration) → token de 64 hex no log → `verify-reset-token` → `valid:true` → `reset-password` → hash bcrypt da nova senha confere no banco → **token Zeroed**: token de reuso **rejeitado**.
 - Usuário QA criado e totalmente removido após o teste.
 
+**4. Deploy de produção validado ao vivo (2026-10-26):**
+- Primeiro push falhou no build (`Module not found: 'stripe'`) porque **as deleções do Stripe nunca tinham sido commitadas** (estavam só no working tree local). Corrigido no commit `58a236b`, que trouxe o conjunto completo da migração para Asaas.
+- Deploy final: **READY**. Verificado em `https://curso-omotenashi.vercel.app`:
+  - `/api/health` → 200 com `{"database":"connected"}`; `/`, `/privacidade`, `/auth/esqueci-senha`, `/auth/reset-senha` → 200.
+  - `POST /api/webhooks/asaas` sem assinatura → **400** (rejeita corretamente).
+  - Fluxo de reset **ponta a ponta contra o banco de produção** com usuário QA (criado e removido no fim): `forgot-password` 200 → token no log de runtime → `verify-reset-token` `valid:true` → `reset-password` 200 → hash bcrypt (cost 12) confere → reuso do token **400** → login com a nova senha retorna sessão válida; senha antiga **401**.
+- **Achado:** produção está sem `RESEND_API_KEY`/`EMAIL_FROM`, então o fluxo cai no fallback e o link **só aparece no log de runtime** — nenhum e-mail é entregue. É o único item que impede o autoatendimento de reset de senha pelos alunos.
+- Também confirmado que `ASAAS_API_KEY`, `ASAAS_ENV`, `ASAAS_WEBHOOK_SECRET`, `NEXTAUTH_SECRET`, `NEXT_PUBLIC_APP_URL`, `ADMIN_USERNAME/PASSWORD` e `UPSTASH_REDIS_REST_URL/TOKEN` **estão** configurados em Production.
+
+**5. Fluxo pós-pagamento (PIX → código → ativação) validado ao vivo:**
+- Payload PIX gerado por `lib/pix.ts` decodificado: campos EMV completos (`00`, `26`, `52`, `53`, `54`, `58`, `59`, `60`, `62`, `63`), **CRC16 válido**, valor correto (`197.00`), país/moeda corretos, apenas ASCII.
+- `POST /api/ativar` com código de 8 hex contra o banco de produção: **200 `{"success":true}`**, criou `User` + `Enrollment`, apagou o `PendingRegistration`; login com a senha do cadastro retornou sessão e `/curso` respondeu **200**. Código inexistente → 400. Registros de QA removidos depois.
+- **Achados (não corrigidos, precisam de decisão de produto):**
+  1. A conta ativada nasce com `courseAccess=false` / `coursePlan=null`, e **nenhum código lê `courseAccess`** — o gate de `/curso`, `/dashboard`, `/forum` e `/ebook` é só “estar logado” (middleware). Ou seja: qualquer aluno logado acessa o curso, independente do plano pago.
+  2. A chave PIX está **hardcoded** em `lib/pix.ts` (`07030124600`); `NEXT_PUBLIC_PIX_KEY` existe na Vercel mas **não é usada** — conferir se é a mesma chave que deve receber os pagamentos.
+  3. O cadastro (`/api/register`) devolve PIX estático (chave/CRC local) e **não** cria cobrança no Asaas, embora `ASAAS_*` esteja configurado e o webhook `/api/webhooks/asaas` libere acesso. São dois caminhos de pagamento paralelos — escolher um para o lançamento.
+  4. O `activationCode` só nasce quando o admin clica em gerar em `/admin/ativacoes`; sem esse passo manual o aluno que pagou não consegue ativar.
+
+**6. Limpeza de configuração:** as variáveis legadas `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` e `STRIPE_PRICE_ID_FREE` foram **removidas do projeto na Vercel (Production)** e o bloco correspondente saiu do `.env.example` (Stripe não existe mais no código).
+
 ## 🚨 AÇÃO URGENTE — chaves expostas nesta sessão (rotacionar):
 
 Durante a revalidação, dois acidentes de output vazaram segredos **em texto claro na sessão**:
@@ -61,10 +81,10 @@ Mesmo o Stripe estando fora do código, ambas são credenciais válidas contra s
 | # | Item | Por que bloqueia | Onde resolver |
 |---|------|---------|----------|
 | 1 | Rotacionar `STRIPE_SECRET_KEY` live e senha do Neon | Chaves expostas em output de sessão (acima). Neon: dashboard do Neon → reset password → atualizar `DATABASE_URL`/`_UNPOOLED` no Vercel | Stripe Dashboard + Neon + Vercel |
-| 2 | **E-mail de reset testado offline** | Envio implementado e testado no fallback; para a entrega real por e-mail, `RESEND_API_KEY` + `EMAIL_FROM` (domínio verificado) precisa estar na Vercel Production | Vercel → Settings → Environment Variables |
-| 3 | Variáveis de produção na Vercel | Confirmar configuradas: `DATABASE_URL` (+ `_UNPOOLED` para migrate), `NEXTAUTH_SECRET` forte, `NEXT_PUBLIC_APP_URL`, `ASAAS_API_KEY`, `ASAAS_WEBHOOK_SECRET` **igual à chave registrada no painel Asaas**, `ADMIN_USERNAME`/`ADMIN_PASSWORD`, `UPSTASH_REDIS_REST_URL/TOKEN` | Vercel → Settings → Environment Variables |
+| 2 | **Entrega real do e-mail de reset** | Verificado em produção: sem `RESEND_API_KEY`/`EMAIL_FROM`, o fluxo cai no fallback e o link só vai para o log de runtime. Basta criar a chave no Resend + verificar o domínio de envio e rodar `npx vercel env add RESEND_API_KEY production` e `npx vercel env add EMAIL_FROM production`, depois redeploy | Resend + Vercel |
+| 3 | Variáveis de produção na Vercel | **Confirmado presentes** (exceto `RESEND_API_KEY`/`EMAIL_FROM`): `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `NEXTAUTH_SECRET`, `NEXT_PUBLIC_APP_URL`, `ASAAS_API_KEY`, `ASAAS_ENV`, `ASAAS_WEBHOOK_SECRET`, `ADMIN_USERNAME`/`ADMIN_PASSWORD`, `UPSTASH_REDIS_REST_URL/TOKEN`. Vars legadas de Stripe ainda existem no painel (inofensivas) e podem ser removidas | Vercel → Settings → Environment Variables |
 | 4 | Webhook Asaas registered | URL de produção `https://<dominio>/api/webhooks/asaas` registrada no painel Asaas, com a mesma `ASAAS_WEBHOOK_SECRET` | Painel Asaas → Integrações → Webhook |
-| 5 | Uptime monitoring | Nenhum monitor apontando para `/api/health` | UptimeRobot/BetterStack |
+| 5 | Uptime monitoring | `/api/health` é público e já responde 200/503 corretamente, mas nenhum monitor externo aponta para ele | UptimeRobot/BetterStack (monitor HTTP em `https://curso-omotenashi.vercel.app/api/health`, alerta quando status ≠ 200) |
 | 6 | Domínio customizado + DNS + SSL | Vercel cuida do SSL; DNS é passo do dono | Vercel Dashboard |
 
 > Nota: o relatório de 2025-10-25 mencionava "RLS no Supabase" — o banco é **Neon PostgreSQL** acessado só via Prisma no servidor (sem conexão de client direto), então RLS não se aplica ao desenho atual. O gate de acesso continua sendo middleware + role no token NextAuth.
