@@ -1,12 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Copy, Check, Key, Mail, User, Clock, DollarSign, Package } from "lucide-react"
+import { Copy, Check, Key, Mail } from "lucide-react"
+import { AdminLoading, EmptyNote, PageHeading } from "@/components/admin/ui"
+import { adminFetch } from "@/components/admin/http"
+import { formatBRL, formatDate } from "@/lib/format"
+import { getPlan } from "@/lib/plans"
 
-interface Pending {
+type Pending = {
   id: string
   name: string
   email: string
@@ -16,41 +20,35 @@ interface Pending {
   createdAt: string
 }
 
-const PLAN_LABELS: Record<string, string> = {
-  individual: "Individual",
-  empresarial30: "Empresarial 30",
-  empresarial50: "Empresarial 50",
-  combo: "Combo",
-}
-
 export default function AdminAtivacoes() {
   const [pendings, setPendings] = useState<Pending[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
   const [generating, setGenerating] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
 
+  function load() {
+    return adminFetch<Pending[]>("/api/admin/ativacoes").then(setPendings)
+  }
+
   useEffect(() => {
-    fetch("/api/admin/ativacoes")
-      .then((r) => r.json())
-      .then((d) => setPendings(d))
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    load().catch((err: unknown) => setError(err instanceof Error ? err.message : "Falha ao carregar")).finally(() => setLoading(false))
   }, [])
 
   async function gerarCodigo(id: string) {
     setGenerating(id)
-    const res = await fetch("/api/admin/ativacoes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    })
-    const data = await res.json()
-    if (data.code) {
-      setPendings((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, activationCode: data.code } : p))
-      )
+    setError("")
+    try {
+      const data = await adminFetch<{ code: string }>("/api/admin/ativacoes", {
+        method: "POST",
+        body: JSON.stringify({ id }),
+      })
+      setPendings((prev) => prev.map((item) => (item.id === id ? { ...item, activationCode: data.code } : item)))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao gerar código")
+    } finally {
+      setGenerating(null)
     }
-    setGenerating(null)
   }
 
   function handleCopy(code: string) {
@@ -59,105 +57,77 @@ export default function AdminAtivacoes() {
     setTimeout(() => setCopied(null), 3000)
   }
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Ativações Pendentes</h1>
-        <p className="text-sm text-muted-foreground">
-          Gere códigos de ativação para alunos que pagaram o PIX
-        </p>
-      </div>
+  const appUrl = typeof window !== "undefined" ? window.location.origin : "https://omotenashi.infinity-agency.online"
 
-      {loading ? (
-        <p className="text-muted-foreground">Carregando...</p>
-      ) : pendings.length === 0 ? (
-        <Card className="border-border/50">
-          <CardContent className="py-12 text-center text-muted-foreground">
-            Nenhum cadastro pendente
-          </CardContent>
-        </Card>
+  if (loading) return <AdminLoading />
+
+  return (
+    <div>
+      <PageHeading
+        title="Ativações"
+        description="Cadastros que pagaram via PIX e ainda não ativaram a conta. Gerar o código também registra o pagamento como confirmado."
+      />
+      {error ? <p className="mb-4 text-sm text-red-400">{error}</p> : null}
+
+      {pendings.length === 0 ? (
+        <Card className="border-border/50"><CardContent><EmptyNote>Nenhum cadastro pendente.</EmptyNote></CardContent></Card>
       ) : (
         <div className="space-y-4">
-          {pendings.map((p) => (
-            <Card key={p.id} className="border-border/50">
+          {pendings.map((pending) => (
+            <Card key={pending.id} className="border-border/50">
               <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      {p.name}
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground flex items-center gap-2">
-                      <Mail className="h-3 w-3" />
-                      {p.email}
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <CardTitle className="text-base">{pending.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground">{pending.email}</p>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {getPlan(pending.plan).label} · {formatBRL(pending.value)} · {formatDate(pending.createdAt)}
                     </p>
-                    <div className="flex flex-wrap gap-2 text-xs">
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <Package className="h-3 w-3" />
-                        {PLAN_LABELS[p.plan] || p.plan}
-                      </span>
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <DollarSign className="h-3 w-3" />
-                        R$ {p.value.toFixed(2).replace(".", ",")}
-                      </span>
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        {new Date(p.createdAt).toLocaleString("pt-BR")}
-                      </span>
-                    </div>
                   </div>
-                  {p.activationCode ? (
-                    <Badge variant="accent" className="shrink-0">
-                      <Key className="h-3 w-3 mr-1" /> Código gerado
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="shrink-0">
-                      Aguardando
-                    </Badge>
-                  )}
+                  <Badge variant={pending.activationCode ? "accent" : "secondary"}>
+                    {pending.activationCode ? "Código gerado" : "Aguardando"}
+                  </Badge>
                 </div>
               </CardHeader>
-              <CardContent>
-                {p.activationCode ? (
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 bg-secondary/50 border border-border/50 rounded-lg px-4 py-2 text-lg font-mono text-center tracking-widest">
-                      {p.activationCode}
+              <CardContent className="flex flex-col gap-3 md:flex-row md:items-center">
+                {pending.activationCode ? (
+                  <>
+                    <code className="flex-1 rounded-lg border border-border/50 bg-secondary/50 px-4 py-2 text-center font-mono text-lg tracking-widest">
+                      {pending.activationCode}
                     </code>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCopy(p.activationCode!)}
-                    >
-                      {copied === p.activationCode ? (
-                        <Check className="h-4 w-4 text-green-400" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
+                    <Button variant="outline" size="sm" onClick={() => handleCopy(pending.activationCode!)}>
+                      {copied === pending.activationCode ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const planLabel = PLAN_LABELS[p.plan] || p.plan
-                        const valueStr = p.value.toFixed(2).replace(".", ",")
-                        const mailto = `mailto:${p.email}?subject=${encodeURIComponent("Código de Ativação - Curso Omotenashi")}&body=${encodeURIComponent(`Olá ${p.name},\n\nSeu pagamento do plano ${planLabel} (R$ ${valueStr}) foi confirmado!\n\nSeu código de ativação é:\n\n${p.activationCode}\n\nAcesse https://curso-omotenashi.vercel.app/auth/ativar e insira o código para ativar sua conta.\n\nAtenciosamente,\nEquipe Omotenashi`)}`
-                        window.open(mailto)
+                        const body = `Olá ${pending.name},\n\nSeu pagamento (${getPlan(pending.plan).label}, ${formatBRL(pending.value)}) foi confirmado.\n\nCódigo de ativação:\n${pending.activationCode}\n\nAtive em ${appUrl}/auth/ativar\n\nEquipe Omotenashi`
+                        window.open(`mailto:${pending.email}?subject=${encodeURIComponent("Código de ativação — Omotenashi")}&body=${encodeURIComponent(body)}`)
                       }}
                     >
                       <Mail className="h-4 w-4" />
                     </Button>
-                  </div>
+                  </>
                 ) : (
-                  <Button
-                    size="sm"
-                    className="gap-2"
-                    onClick={() => gerarCodigo(p.id)}
-                    disabled={generating === p.id}
-                  >
+                  <Button size="sm" className="gap-2" disabled={generating === pending.id} onClick={() => gerarCodigo(pending.id)}>
                     <Key className="h-4 w-4" />
-                    {generating === p.id ? "Gerando..." : "Gerar Código de Ativação"}
+                    {generating === pending.id ? "Gerando..." : "Gerar código e registrar pagamento"}
                   </Button>
                 )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="md:ml-auto"
+                  onClick={() => {
+                    if (!confirm("Remover este cadastro pendente?")) return
+                    void adminFetch("/api/admin/ativacoes", { method: "DELETE", body: JSON.stringify({ id: pending.id }) })
+                      .then(load)
+                      .catch((err: unknown) => setError(err instanceof Error ? err.message : "Falha ao remover"))
+                  }}
+                >
+                  Remover
+                </Button>
               </CardContent>
             </Card>
           ))}

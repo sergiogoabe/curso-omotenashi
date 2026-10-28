@@ -1,118 +1,228 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Users, TrendingUp, CheckCircle, Clock, Mail, Phone, Building2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { ArrowLeft, Calendar, Mail, Phone, Users } from "lucide-react"
+import { AdminLoading, EmptyNote, Field } from "@/components/admin/ui"
+import { adminFetch } from "@/components/admin/http"
+import { formatDate } from "@/lib/format"
+import { eventTypeLabel } from "@/lib/admin-labels"
+import type { CompanyEmployeeRow } from "@/lib/company-report"
+import type { EventRow } from "@/types/admin"
 
-export default function CompanyDetail() {
-  const { id } = useParams()
-  const [company, setCompany] = useState<any>(null)
+type CompanyDetail = {
+  id: string
+  name: string
+  email: string
+  phone: string | null
+  cnpj: string | null
+  plan: string
+  active: boolean
+  createdAt: string
+  totalUsers: number
+  avgProgress: number
+}
+
+export default function CompanyDetailPage() {
+  const { id } = useParams<{ id: string }>()
+  const [company, setCompany] = useState<CompanyDetail | null>(null)
+  const [employees, setEmployees] = useState<CompanyEmployeeRow[]>([])
+  const [events, setEvents] = useState<EventRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({ name: "", email: "", phone: "", cnpj: "", plan: "business", active: true })
+
+  function load() {
+    return Promise.all([
+      adminFetch<{ company: CompanyDetail; employees: CompanyEmployeeRow[] }>(`/api/admin/companies/${id}`),
+      adminFetch<{ events: EventRow[] }>("/api/admin/events").catch(() => ({ events: [] as EventRow[] })),
+    ]).then(([detail, eventData]) => {
+      setCompany(detail.company)
+      setEmployees(detail.employees)
+      setEvents(eventData.events.filter((event) => event.companyId === id))
+      setForm({
+        name: detail.company.name,
+        email: detail.company.email,
+        phone: detail.company.phone || "",
+        cnpj: detail.company.cnpj || "",
+        plan: detail.company.plan,
+        active: detail.company.active,
+      })
+    })
+  }
 
   useEffect(() => {
-    fetch("/api/admin/companies").then(r => r.json()).then(d => {
-      const c = (d.companies || []).find((c: any) => c.id === id)
-      if (c) {
-        fetch(`/api/company/dashboard`).then(r => r.json()).then(stats => {
-          setCompany({ ...c, employeeDetails: stats.employees || [] })
-          setLoading(false)
-        }).catch(() => { setCompany(c); setLoading(false) })
-      } else {
-        setLoading(false)
-      }
-    })
+    if (!id) return
+    load().catch((err: unknown) => setError(err instanceof Error ? err.message : "Falha ao carregar")).finally(() => setLoading(false))
   }, [id])
 
-  if (loading) return <div className="text-center py-20"><span className="text-4xl animate-pulse">🏢</span></div>
-  if (!company) return <div className="text-center py-20"><p className="text-muted-foreground">Empresa não encontrada</p></div>
+  const upcoming = useMemo(
+    () => events.filter((event) => event.status !== "cancelled" && new Date(event.startsAt) >= new Date()).slice(0, 5),
+    [events],
+  )
+
+  async function run(action: () => Promise<void>) {
+    setError("")
+    setSaving(true)
+    try {
+      await action()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha na operação")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading) return <AdminLoading />
+  if (!company) return <p className="text-sm text-muted-foreground">Empresa não encontrada.</p>
 
   return (
     <div>
-      <Link href="/admin/empresas" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
-        <ArrowLeft className="h-4 w-4" /> Voltar para Empresas
+      <Link href="/admin/empresas" className="mb-6 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" /> Voltar
       </Link>
 
-      <div className="flex items-start gap-4 mb-8">
-        <div className="w-14 h-14 rounded-xl bg-red-950/30 border border-red-500/20 flex items-center justify-center text-2xl">
-          🏢
-        </div>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-display font-bold">{company.name}</h2>
-          <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-            <Mail className="h-3 w-3" /> {company.email}
-            {company.phone && <><Phone className="h-3 w-3 ml-2" /> {company.phone}</>}
+          <p className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-1"><Mail className="h-3.5 w-3.5" />{company.email}</span>
+            {company.phone ? <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5" />{company.phone}</span> : null}
           </p>
-          <div className="flex gap-2 mt-2">
-            {company.active ? <Badge variant="accent">Ativo</Badge> : <Badge variant="destructive">Inativo</Badge>}
-            <Badge variant="secondary">{company.plan === "business" ? "Corporativo" : company.plan}</Badge>
-            {company.cnpj && <span className="text-xs text-muted-foreground">CNPJ: {company.cnpj}</span>}
+          <div className="mt-2 flex flex-wrap gap-2">
+            <Badge variant={company.active ? "accent" : "destructive"}>{company.active ? "Ativa" : "Inativa"}</Badge>
+            <Badge variant="secondary">{company.plan}</Badge>
+            {company.cnpj ? <span className="text-xs text-muted-foreground">CNPJ {company.cnpj}</span> : null}
           </div>
+        </div>
+        <div className="flex gap-2">
+          <Link href={`/admin/associados`}><Button variant="outline" size="sm">Associados</Button></Link>
+          <Link href={`/admin/eventos`}><Button variant="outline" size="sm">Eventos</Button></Link>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      {error ? <p className="mb-4 text-sm text-red-400">{error}</p> : null}
+
+      <div className="mb-6 grid grid-cols-3 gap-4">
+        <Card className="border-border/50 p-4"><p className="text-xs text-muted-foreground">Associados</p><p className="text-2xl font-bold">{company.totalUsers}</p></Card>
+        <Card className="border-border/50 p-4"><p className="text-xs text-muted-foreground">Progresso médio</p><p className="text-2xl font-bold text-amber-400">{company.avgProgress}%</p></Card>
+        <Card className="border-border/50 p-4"><p className="text-xs text-muted-foreground">Cliente desde</p><p className="text-lg font-bold">{formatDate(company.createdAt)}</p></Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card className="border-border/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs text-muted-foreground">Funcionários</CardTitle>
-            <p className="text-2xl font-bold flex items-center gap-2"><Users className="h-5 w-5 text-blue-400" /> {company.totalUsers}</p>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-lg">Editar empresa</CardTitle></CardHeader>
+          <CardContent>
+            <form
+              className="grid gap-3"
+              onSubmit={(event) => {
+                event.preventDefault()
+                void run(async () => {
+                  await adminFetch("/api/admin/companies", {
+                    method: "PATCH",
+                    body: JSON.stringify({
+                      id: company.id,
+                      name: form.name,
+                      email: form.email,
+                      phone: form.phone || null,
+                      cnpj: form.cnpj || null,
+                      plan: form.plan,
+                      active: form.active,
+                    }),
+                  })
+                  await load()
+                })
+              }}
+            >
+              <Field label="Nome"><Input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></Field>
+              <Field label="E-mail"><Input type="email" required value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></Field>
+              <Field label="Telefone"><Input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></Field>
+              <Field label="CNPJ"><Input value={form.cnpj} onChange={(event) => setForm({ ...form, cnpj: event.target.value })} /></Field>
+              <Field label="Plano"><Input value={form.plan} onChange={(event) => setForm({ ...form, plan: event.target.value })} /></Field>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={form.active} onChange={(event) => setForm({ ...form, active: event.target.checked })} />
+                Empresa ativa
+              </label>
+              <div className="flex gap-2">
+                <Button type="submit" disabled={saving}>{saving ? "Salvando..." : "Salvar"}</Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={saving}
+                  onClick={() => {
+                    if (!confirm(`Excluir ${company.name}? Os associados ficam sem empresa.`)) return
+                    void run(async () => {
+                      await adminFetch("/api/admin/companies", { method: "DELETE", body: JSON.stringify({ id: company.id }) })
+                      window.location.href = "/admin/empresas"
+                    })
+                  }}
+                >
+                  Excluir
+                </Button>
+              </div>
+            </form>
+          </CardContent>
         </Card>
+
         <Card className="border-border/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs text-muted-foreground">Progresso Médio</CardTitle>
-            <p className="text-2xl font-bold flex items-center gap-2"><TrendingUp className="h-5 w-5 text-amber-400" /> {company.avgProgress}%</p>
-          </CardHeader>
-        </Card>
-        <Card className="border-border/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs text-muted-foreground">Desde</CardTitle>
-            <p className="text-2xl font-bold">{new Date(company.createdAt).toLocaleDateString("pt-BR")}</p>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-lg">Próximos eventos</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            {upcoming.length === 0 ? <EmptyNote>Nenhum evento agendado para esta empresa.</EmptyNote> : null}
+            {upcoming.map((event) => (
+              <div key={event.id} className="border-b border-border/40 pb-3 last:border-0">
+                <p className="text-sm font-medium">{event.title}</p>
+                <p className="text-xs text-muted-foreground">{eventTypeLabel(event.type)} · {formatDate(event.startsAt)}</p>
+              </div>
+            ))}
+            <Link href="/admin/eventos" className="inline-flex items-center gap-1 text-xs text-red-400"><Calendar className="h-3.5 w-3.5" />Agendar evento</Link>
+          </CardContent>
         </Card>
       </div>
 
-      <Card className="border-border/50">
-        <CardHeader>
-          <CardTitle className="text-lg">Funcionários e Progresso</CardTitle>
-        </CardHeader>
+      <Card className="mt-6 border-border/50">
+        <CardHeader><CardTitle className="text-lg">Equipe</CardTitle></CardHeader>
         <CardContent>
-          {(!company.employeeDetails || company.employeeDetails.length === 0) ? (
-            <div className="flex flex-col items-center py-8 text-muted-foreground">
-              <Users className="h-10 w-10 mb-3" />
-              <p>Nenhum funcionário vinculado a esta empresa ainda.</p>
-            </div>
+          {employees.length === 0 ? (
+            <EmptyNote>Nenhum associado vinculado. Use a tela Associados para vincular alunos.</EmptyNote>
           ) : (
-            <div className="space-y-3">
-              {company.employeeDetails.map((emp: any) => (
-                <div key={emp.id} className="flex items-center justify-between p-4 rounded-lg border border-border/50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-sm font-bold">
-                      {emp.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium">{emp.name}</p>
-                      <p className="text-xs text-muted-foreground">{emp.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-right text-sm">
-                      <p className="font-medium">{emp.completedLessons}/{emp.totalLessons} aulas</p>
-                      <div className="w-24 h-1.5 bg-secondary rounded-full mt-1 overflow-hidden">
-                        <div className="h-full bg-linear-to-r from-red-500 to-amber-400 rounded-full transition-all" style={{ width: `${emp.progressPercent}%` }} />
-                      </div>
-                    </div>
-                    <Badge variant={emp.enrolled ? "accent" : "secondary"}>
-                      {emp.enrolled ? "Matriculado" : "Sem matrícula"}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/50 text-left text-xs text-muted-foreground">
+                    <th className="px-2 py-3 font-medium">Nome</th>
+                    <th className="px-2 py-3 font-medium">Progresso</th>
+                    <th className="px-2 py-3 font-medium">Acesso</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {employees.map((employee) => (
+                    <tr key={employee.id} className="border-b border-border/30">
+                      <td className="px-2 py-3">
+                        <p>{employee.name}</p>
+                        <p className="text-xs text-muted-foreground">{employee.email}</p>
+                      </td>
+                      <td className="px-2 py-3">
+                        <div className="h-1.5 w-28 rounded-full bg-secondary">
+                          <div className="h-1.5 rounded-full bg-red-500" style={{ width: `${employee.progressPercent}%` }} />
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground">{employee.completedLessons}/{employee.totalLessons} · {employee.progressPercent}%</p>
+                      </td>
+                      <td className={`px-2 py-3 ${employee.enrolled ? "text-green-400" : "text-muted-foreground"}`}>
+                        {employee.enrolled ? "Liberado" : "Sem acesso"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
+          <p className="mt-4 flex items-center gap-1 text-xs text-muted-foreground"><Users className="h-3.5 w-3.5" />{employees.length} pessoa(s) nesta empresa</p>
         </CardContent>
       </Card>
     </div>

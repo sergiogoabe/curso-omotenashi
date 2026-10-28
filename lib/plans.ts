@@ -37,3 +37,7 @@ export function getPlan(planId?: string | null) {
 export function getPlanValue(planId?: string | null): number {
   return getPlan(planId).value
 }
+
+export function isPlanId(value: string): value is PlanId {
+  return Object.prototype.hasOwnProperty.call(PLANS, value)
+}

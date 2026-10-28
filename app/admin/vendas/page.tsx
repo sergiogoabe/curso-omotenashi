@@ -5,23 +5,56 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, DollarSign, Users, TrendingUp, Filter, CheckCircle, XCircle } from "lucide-react"
+import { Search, CheckCircle, XCircle } from "lucide-react"
 import { PLANS, PLAN_IDS, getPlan } from "@/lib/plans"
+import { formatBRL } from "@/lib/format"
+import { AdminLoading, Field, fieldClass } from "@/components/admin/ui"
+import { adminFetch } from "@/components/admin/http"
+
+type ClientOption = { id: string; name: string | null; email: string }
 
 export default function AdminVendas() {
   const [data, setData] = useState<any>(null)
+  const [clients, setClients] = useState<ClientOption[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [filterPlan, setFilterPlan] = useState("all")
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [error, setError] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({ userId: "", plan: "individual" })
+
+  function load() {
+    return Promise.all([
+      adminFetch<{ enrollments: unknown[]; stats: Record<string, number> }>("/api/admin/enrollments"),
+      adminFetch<{ users: ClientOption[] }>("/api/admin/clients").catch(() => ({ users: [] as ClientOption[] })),
+    ]).then(([enrollments, clientData]) => {
+      setData(enrollments)
+      setClients(clientData.users)
+    })
+  }
 
   useEffect(() => {
-    fetch("/api/admin/enrollments").then(r => r.json()).then(d => {
-      setData(d)
-      setLoading(false)
-    })
+    load().catch((err: unknown) => setError(err instanceof Error ? err.message : "Falha ao carregar")).finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <div className="text-center py-20"><span className="text-4xl animate-pulse">💰</span></div>
+  async function toggleActive(enrollment: { id: string; active: boolean; plan: string }) {
+    setBusyId(enrollment.id)
+    setError("")
+    try {
+      await adminFetch("/api/admin/enrollments", {
+        method: "PATCH",
+        body: JSON.stringify({ id: enrollment.id, active: !enrollment.active, plan: enrollment.plan }),
+      })
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao atualizar")
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  if (loading) return <AdminLoading />
 
   const { enrollments, stats } = data || { enrollments: [], stats: {} }
 
@@ -35,13 +68,54 @@ export default function AdminVendas() {
 
   return (
     <div>
-      <h2 className="text-2xl font-display font-bold mb-6">💰 Vendas e Clientes</h2>
+      <h2 className="text-2xl font-display font-bold mb-2">Matrículas</h2>
+      <p className="mb-6 max-w-2xl text-sm text-muted-foreground">O valor mostrado é o preço do plano, não um pagamento confirmado. Suspender a matrícula bloqueia o curso.</p>
+      {error ? <p className="mb-4 text-sm text-red-400">{error}</p> : null}
+
+      <Card className="mb-8 border-border/50">
+        <CardHeader><CardTitle className="text-lg">Nova matrícula</CardTitle></CardHeader>
+        <CardContent>
+          <form
+            className="grid gap-3 md:grid-cols-[1fr_220px_auto]"
+            onSubmit={(event) => {
+              event.preventDefault()
+              setSaving(true)
+              setError("")
+              adminFetch("/api/admin/enrollments", {
+                method: "POST",
+                body: JSON.stringify({ userId: form.userId, plan: form.plan, active: true }),
+              })
+                .then(() => load())
+                .then(() => setForm({ userId: "", plan: form.plan }))
+                .catch((err: unknown) => setError(err instanceof Error ? err.message : "Falha ao matricular"))
+                .finally(() => setSaving(false))
+            }}
+          >
+            <Field label="Cliente">
+              <select className={fieldClass} required value={form.userId} onChange={(event) => setForm({ ...form, userId: event.target.value })}>
+                <option value="">Selecione</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>{client.name || client.email} · {client.email}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Plano">
+              <select className={fieldClass} value={form.plan} onChange={(event) => setForm({ ...form, plan: event.target.value })}>
+                {PLAN_IDS.map((id) => <option key={id} value={id}>{PLANS[id].label}</option>)}
+              </select>
+            </Field>
+            <div className="flex items-end">
+              <Button type="submit" disabled={saving || clients.length === 0}>{saving ? "Salvando..." : "Matricular"}</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <Card className="border-border/50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs text-muted-foreground">Receita Total</CardTitle>
-            <p className="text-2xl font-bold text-emerald-400">R$ {(stats.revenue || 0).toLocaleString()}</p>
+            <CardTitle className="text-xs text-muted-foreground">Valor dos planos</CardTitle>
+            <p className="text-2xl font-bold text-emerald-400">{formatBRL(stats.revenue || 0)}</p>
           </CardHeader>
         </Card>
         <Card className="border-border/50">
@@ -101,7 +175,8 @@ export default function AdminVendas() {
                   <th className="text-left py-3 px-2 font-medium text-muted-foreground">Plano</th>
                   <th className="text-left py-3 px-2 font-medium text-muted-foreground">Status</th>
                   <th className="text-left py-3 px-2 font-medium text-muted-foreground">Data</th>
-                  <th className="text-left py-3 px-2 font-medium text-muted-foreground">Valor</th>
+                  <th className="text-left py-3 px-2 font-medium text-muted-foreground">Valor do plano</th>
+                  <th className="text-left py-3 px-2 font-medium text-muted-foreground">Ação</th>
                 </tr>
               </thead>
               <tbody>
@@ -122,7 +197,12 @@ export default function AdminVendas() {
                       )}
                     </td>
                     <td className="py-3 px-2 text-muted-foreground">{new Date(e.createdAt).toLocaleDateString("pt-BR")}</td>
-                    <td className="py-3 px-2 font-medium">R$ {getPlan(e.plan).value.toLocaleString("pt-BR")}</td>
+                    <td className="py-3 px-2 font-medium">{formatBRL(getPlan(e.plan).value)}</td>
+                    <td className="py-3 px-2">
+                      <Button size="sm" variant="outline" disabled={busyId === e.id} onClick={() => toggleActive(e)}>
+                        {e.active ? "Suspender" : "Reativar"}
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

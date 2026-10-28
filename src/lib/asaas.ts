@@ -90,19 +90,16 @@ export async function createOmotenashiCoursePix(context: OmotenashiPaymentContex
   
   const pix = createPixPayments({
     onAccessGrant: async (grant) => {
-      const { prisma } = await import("@/lib/prisma");
+      const { syncCourseAccess } = await import("@/lib/access");
       
       const userId = grant.userId;
       const plan = grant.plan || grant.metadata?.plan as string;
       
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          plan: plan || "premium",
-          courseAccess: true,
-          coursePlan: plan,
-          courseExpiresAt: grant.expiresAt || null,
-        },
+      await syncCourseAccess({
+        userId,
+        plan: plan || "individual",
+        active: true,
+        expiresAt: grant.expiresAt ? new Date(grant.expiresAt) : null,
       });
       
       console.log("[Omotenashi Webhook] Curso liberado:", userId, plan);
@@ -144,20 +141,18 @@ export async function handleOmotenashiWebhook(rawBody: string, signature: string
   
   const pix = createPixPayments({
     onAccessGrant: async (grant) => {
-      const { prisma } = await import("@/lib/prisma");
+      const { syncCourseAccess } = await import("@/lib/access");
       
       const userId = grant.userId;
       const plan = grant.plan || grant.metadata?.plan as string;
       
-      if (grant.resourceType === "course" || grant.resourceId.startsWith("omotenashi_")) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            plan: plan || "premium",
-            courseAccess: true,
-            coursePlan: plan,
-            courseExpiresAt: grant.expiresAt || null,
-          },
+      const resourceId = typeof grant.resourceId === "string" ? grant.resourceId : ""
+      if (grant.resourceType === "course" || resourceId.startsWith("omotenashi_")) {
+        await syncCourseAccess({
+          userId,
+          plan: plan || "individual",
+          active: true,
+          expiresAt: grant.expiresAt ? new Date(grant.expiresAt) : null,
         });
         
         console.log("[Omotenashi Webhook] Curso liberado:", userId, plan);

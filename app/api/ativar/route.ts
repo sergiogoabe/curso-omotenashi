@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { syncCourseAccess } from "@/lib/access"
 import { rateLimit, clientIp, tooMany } from "@/lib/rate-limit"
 
 export const runtime = "nodejs"
@@ -27,12 +28,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email já cadastrado" }, { status: 400 })
     }
 
-    await prisma.$transaction(async tx => {
-      const user = await tx.user.create({
-        data: { name: pending.name, email: pending.email, password: pending.password, role: "student" },
+    const user = await prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          name: pending.name,
+          email: pending.email,
+          password: pending.password,
+          role: "student",
+          plan: pending.plan,
+        },
       })
-      await tx.enrollment.create({ data: { userId: user.id, plan: pending.plan, active: true } })
       await tx.pendingRegistration.delete({ where: { id: pending.id } })
+      return created
+    })
+
+    await syncCourseAccess({
+      userId: user.id,
+      plan: pending.plan,
+      active: true,
     })
 
     return NextResponse.json({ success: true })

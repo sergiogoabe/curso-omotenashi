@@ -2,80 +2,127 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { BookOpen, Building2, Calendar, GraduationCap, KeyRound, MessagesSquare, UserPlus, Users, Wallet } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, BookOpen, FileText, GraduationCap, TrendingUp, DollarSign, ArrowRight } from "lucide-react"
+import { AdminLoading, StatLink } from "@/components/admin/ui"
+import { adminFetch } from "@/components/admin/http"
+import { formatBRL, formatDate } from "@/lib/format"
+import { getPlan } from "@/lib/plans"
+import { eventTypeLabel, paymentStatusLabel } from "@/lib/admin-labels"
+import type { OverviewStats } from "@/types/admin"
 
 export default function AdminOverview() {
-  const [stats, setStats] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<OverviewStats | null>(null)
+  const [error, setError] = useState("")
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/admin/stats").then(r => r.json()),
-      fetch("/api/admin/enrollments").then(r => r.json()),
-    ]).then(([s, e]) => {
-      setStats({ ...s, ...e.stats })
-      setLoading(false)
-    }).catch(() => setLoading(false))
+    adminFetch<OverviewStats>("/api/admin/stats")
+      .then(setStats)
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : "Falha ao carregar"))
   }, [])
 
-  if (loading) return <div className="text-center py-20"><span className="text-4xl animate-pulse">⛩️</span></div>
-
-  const cards = [
-    { title: "Alunos", value: stats?.users || 0, icon: Users, color: "text-blue-400" },
-    { title: "Aulas", value: stats?.lessons || 0, icon: BookOpen, color: "text-green-400" },
-    { title: "E-book Cap.", value: stats?.chapters || 0, icon: FileText, color: "text-amber-400" },
-    { title: "Matrículas", value: stats?.enrollments || 0, icon: GraduationCap, color: "text-purple-400" },
-    { title: "Ativos", value: stats?.active || 0, icon: TrendingUp, color: "text-cyan-400" },
-    { title: "Receita", value: `R$${(stats?.revenue || 0).toLocaleString()}`, icon: DollarSign, color: "text-emerald-400" },
-  ]
+  if (error) return <p className="text-sm text-red-400">{error}</p>
+  if (!stats) return <AdminLoading />
 
   return (
     <div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
-        {cards.map((card, i) => (
-          <Card key={i} className="border-border/50">
-            <CardHeader className="flex flex-row items-center gap-3 pb-2">
-              <card.icon className={`h-5 w-5 ${card.color} shrink-0`} />
-              <div className="min-w-0">
-                <CardTitle className="text-xs font-medium text-muted-foreground truncate">{card.title}</CardTitle>
-                <p className="text-xl font-bold">{card.value}</p>
-              </div>
-            </CardHeader>
-          </Card>
-        ))}
+      <div className="mb-6">
+        <h2 className="text-2xl font-display font-bold">Visão geral</h2>
+        <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+          O Omotenashi vende o curso de hospitalidade em planos pessoal e empresariais, libera o acesso depois do pagamento
+          e acompanha empresas, associados e turmas in-company.
+        </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatLink href="/admin/pagamentos" label="Receita confirmada" value={formatBRL(stats.revenue)} hint={`${formatBRL(stats.revenuePending)} em aberto`} icon={Wallet} tone="text-emerald-400" />
+        <StatLink href="/admin/clientes" label="Clientes" value={stats.users} hint={`${stats.courseAccess} com acesso`} icon={Users} tone="text-blue-400" />
+        <StatLink href="/admin/vendas" label="Matrículas ativas" value={stats.activeEnrollments} hint={`${stats.enrollments} no total`} icon={GraduationCap} tone="text-purple-400" />
+        <StatLink href="/admin/ativacoes" label="Ativações pendentes" value={stats.pending} hint="Cadastros aguardando código" icon={KeyRound} tone="text-amber-400" />
+        <StatLink href="/admin/associados" label="Associados" value={stats.associates} hint="Colaboradores de empresas" icon={UserPlus} tone="text-cyan-400" />
+        <StatLink href="/admin/empresas" label="Empresas" value={stats.companies} hint="Contas corporativas" icon={Building2} tone="text-orange-400" />
+        <StatLink href="/admin/eventos" label="Eventos à frente" value={stats.eventsUpcoming} hint="Turmas, selo e consultoria" icon={Calendar} tone="text-red-400" />
+        <StatLink href="/admin/produto" label="Conteúdo" value={stats.lessons} hint={`${stats.chapters} capítulos do e-book`} icon={BookOpen} tone="text-green-400" />
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card className="border-border/50">
-          <CardHeader><CardTitle className="text-lg">Ações Rápidas</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">Pagamentos recentes</CardTitle>
+            <Link href="/admin/pagamentos" className="text-xs text-red-400">Ver todos</Link>
+          </CardHeader>
           <CardContent className="space-y-3">
-            {[
-              { href: "/admin/vendas", label: "💰 Gerenciar Vendas e Clientes", desc: "Matrículas, pagamentos, relatórios" },
-              { href: "/admin/empresas", label: "🏢 Gerenciar Empresas", desc: "Empresas cadastradas e progresso" },
-              { href: "/admin/usuarios", label: "👥 Gerenciar Usuários", desc: "Alunos, permissões e vínculos" },
-              { href: "/api/seed", label: "🌱 Popular Banco de Dados", desc: "Seed de categorias, aulas, capítulos", external: true },
-            ].map((item, i) => (
-              <Link key={i} href={item.href} target={item.external ? "_blank" : undefined}>
-                <div className="flex items-center justify-between p-3 rounded-lg border border-border/50 hover:bg-secondary/50 transition-colors cursor-pointer">
-                  <div>
-                    <p className="text-sm font-medium">{item.label}</p>
-                    <p className="text-xs text-muted-foreground">{item.desc}</p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+            {stats.recentPayments.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum pagamento lançado.</p> : null}
+            {stats.recentPayments.map((payment) => (
+              <div key={payment.id} className="flex items-center justify-between gap-3 border-b border-border/40 pb-3 last:border-0">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{payment.name || payment.email}</p>
+                  <p className="truncate text-xs text-muted-foreground">{getPlan(payment.plan).label} · {paymentStatusLabel(payment.status)}</p>
                 </div>
-              </Link>
+                <div className="text-right">
+                  <p className="text-sm font-medium">{formatBRL(payment.value)}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(payment.createdAt)}</p>
+                </div>
+              </div>
             ))}
           </CardContent>
         </Card>
 
         <Card className="border-border/50">
-          <CardHeader><CardTitle className="text-lg">Sistema</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">Clientes recentes</CardTitle>
+            <Link href="/admin/clientes" className="text-xs text-red-400">Ver todos</Link>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {stats.recentUsers.length === 0 ? <p className="text-sm text-muted-foreground">Nenhum cliente cadastrado.</p> : null}
+            {stats.recentUsers.map((user) => (
+              <div key={user.id} className="flex items-center justify-between gap-3 border-b border-border/40 pb-3 last:border-0">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{user.name || "Sem nome"}</p>
+                  <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs">{user.courseAccess ? "Com acesso" : "Sem acesso"}</p>
+                  <p className="text-xs text-muted-foreground">{user.company?.name || getPlan(user.plan).label}</p>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">Próximos eventos</CardTitle>
+            <Link href="/admin/eventos" className="text-xs text-red-400">Agenda</Link>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {stats.upcomingEvents.length === 0 ? <p className="text-sm text-muted-foreground">Nenhuma turma ou entrega agendada.</p> : null}
+            {stats.upcomingEvents.map((event) => (
+              <div key={event.id} className="flex items-center justify-between gap-3 border-b border-border/40 pb-3 last:border-0">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{event.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">{eventTypeLabel(event.type)} · {event.company?.name || event.location || "Sem local"}</p>
+                </div>
+                <p className="text-xs text-muted-foreground">{formatDate(event.startsAt)}</p>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50">
+          <CardHeader><CardTitle className="text-lg">Operação</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <InfoRow label="Plataforma" value="Curso Omotenashi" />
-            <InfoRow label="Banco" value="Neon PostgreSQL" />
-            <InfoRow label="Planos" value="R$197 / R$1.497 / R$2.497 / R$3.200" />
-            <InfoRow label="Admin" value="admin@omotenashi.com" />
+            <Row label="Integrações" value="Ver painel" href="/admin/configuracoes" />
+            <Row label="Fórum em aberto" value={String(stats.forumOpen)} href="/admin/forum" />
+            <Row label="Aulas publicadas" value={String(stats.lessons)} href="/admin/produto" />
+            <Row label="Capítulos do e-book" value={String(stats.chapters)} href="/admin/produto" />
+            {stats.plans.map((plan) => (
+              <Row key={plan.plan} label={getPlan(plan.plan).label} value={String(plan.count)} href="/admin/vendas" />
+            ))}
+            <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
+              <MessagesSquare className="h-3.5 w-3.5" />
+              Confirmar um pagamento libera a matrícula de quem já tem conta com o mesmo e-mail.
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -83,11 +130,11 @@ export default function AdminOverview() {
   )
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function Row({ label, value, href }: { label: string; value: string; href: string }) {
   return (
-    <div className="flex justify-between py-1">
+    <Link href={href} className="flex items-center justify-between gap-3 py-1 hover:text-red-400">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium">{value}</span>
-    </div>
+    </Link>
   )
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { z } from "zod"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -36,10 +37,41 @@ export async function POST(req: Request) {
 
   const code = crypto.randomBytes(4).toString("hex").toUpperCase()
 
-  await prisma.pendingRegistration.update({
-    where: { id },
-    data: { activationCode: code },
+  const user = await prisma.user.findFirst({
+    where: { email: { equals: pending.email, mode: "insensitive" } },
+    select: { id: true },
+  })
+
+  await prisma.$transaction(async (tx) => {
+    await tx.pendingRegistration.update({
+      where: { id },
+      data: { activationCode: code },
+    })
+    await tx.payment.create({
+      data: {
+        email: pending.email.toLowerCase(),
+        name: pending.name,
+        plan: pending.plan,
+        value: pending.value,
+        status: "confirmed",
+        paymentMethod: "pix",
+        userId: user?.id ?? null,
+      },
+    })
   })
 
   return NextResponse.json({ code, email: pending.email, name: pending.name })
+}
+
+export async function DELETE(req: Request) {
+  const session = await getServerSession(authOptions)
+  if (!session || (session.user as { role?: string }).role !== "admin") {
+    return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+  }
+
+  const parsed = z.object({ id: z.string().min(1) }).safeParse(await req.json().catch(() => null))
+  if (!parsed.success) return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
+
+  await prisma.pendingRegistration.delete({ where: { id: parsed.data.id } })
+  return NextResponse.json({ ok: true })
 }

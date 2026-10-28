@@ -23,7 +23,7 @@ model User {
   emailVerified DateTime?
   phone         String?
   companyId     String?
-  company       Company?  @relation(fields: [companyId], references: [id])
+  company       Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
   accounts      Account[]
   sessions      Session[]
   enrollments   Enrollment[]
@@ -46,6 +46,7 @@ model Company {
   plan      String   @default("business")
   active    Boolean  @default(true)
   users     User[]
+  events    Event[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -202,4 +203,23 @@ model EbookChapter {
   order     Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @db.Text
+  type        String    @default("in-company")
+  location    String?
+  startsAt    DateTime
+  endsAt      DateTime?
+  capacity    Int?
+  status      String    @default("scheduled")
+  companyId   String?
+  company     Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([startsAt])
+  @@index([companyId])
 }
