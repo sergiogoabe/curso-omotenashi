@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { syncCourseAccess } from "@/lib/access"
 import { rateLimit, clientIp, tooMany } from "@/lib/rate-limit"
+import { emailEnabled, sendEmail, verifyEmailTemplate } from "@/lib/email"
+import { newEmailToken, verifyEmailLink } from "@/lib/email-verify"
 
 export const runtime = "nodejs"
 
@@ -28,7 +30,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email já cadastrado" }, { status: 400 })
     }
 
-    const user = await prisma.$transaction(async (tx) => {
+    const user = await prisma.$transaction(async (tx: any) => {
       const created = await tx.user.create({
         data: {
           name: pending.name,
@@ -48,7 +50,20 @@ export async function POST(req: Request) {
       active: true,
     })
 
-    return NextResponse.json({ success: true })
+    const issued = newEmailToken()
+    await prisma.verificationToken.create({
+      data: { identifier: user.email, token: issued.hash, expires: issued.expires },
+    })
+    const link = verifyEmailLink(issued.token)
+    if (emailEnabled()) {
+      const tpl = verifyEmailTemplate(link)
+      const sent = await sendEmail({ to: user.email, subject: tpl.subject, html: tpl.html })
+      if (!sent) console.error(`[Verify Email] Falha ao enviar para ${user.email}`)
+    } else {
+      console.log(`[Verify Email] ${user.email} ${link}`)
+    }
+
+    return NextResponse.json({ success: true, emailVerification: true })
   } catch (error: any) {
     if (error instanceof SyntaxError) return NextResponse.json({ error: "JSON inválido" }, { status: 400 })
     console.error("Activation error")

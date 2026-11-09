@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { rateLimit } from "@/lib/rate-limit"
 import { createHash, timingSafeEqual } from "node:crypto"
+import { emailEnabled, sendEmail, verifyEmailTemplate } from "@/lib/email"
+import { newEmailToken, verifyEmailLink } from "@/lib/email-verify"
 
 /** Constant-time string compare; avoids leaking the secret length/prefix via timing. */
 function secretEquals(a: string, b: string): boolean {
@@ -65,6 +67,26 @@ export const authOptions: NextAuthOptions = {
 
         const isValid = await bcrypt.compare(credentials.password, user.password)
         if (!isValid) return null
+        if (!user.emailVerified) {
+          // Self-healing: se o email de verificação se perdeu, reemite o link
+          // (apenas quando não existe token válido) antes de bloquear o login.
+          const now = new Date()
+          const validToken = await prisma.verificationToken.findFirst({
+            where: { identifier: user.email, expires: { gt: now } },
+          })
+          if (!validToken) {
+            await prisma.verificationToken.deleteMany({ where: { identifier: user.email, expires: { lte: now } } })
+            const issued = newEmailToken()
+            await prisma.verificationToken.create({
+              data: { identifier: user.email, token: issued.hash, expires: issued.expires },
+            })
+            if (emailEnabled()) {
+              const tpl = verifyEmailTemplate(verifyEmailLink(issued.token))
+              await sendEmail({ to: user.email, subject: tpl.subject, html: tpl.html })
+            }
+          }
+          throw new Error("Email não confirmado. Verifique sua caixa de entrada (link válido por 24h).")
+        }
 
         return {
           id: user.id,

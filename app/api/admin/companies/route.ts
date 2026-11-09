@@ -33,15 +33,15 @@ export async function GET() {
     prisma.lesson.count(),
   ])
 
-  const report = companies.map(c => {
+  const report = companies.map((c: any) => {
     const totalUsers = c.users.length
     const totalLessons = Math.max(lessonCount, 1)
-    const completedMap = c.users.reduce((acc, u) => {
-      acc[u.id] = u.progress.filter(p => p.completed).length
+    const completedMap = c.users.reduce((acc: Record<string, number>, u: any) => {
+      acc[u.id] = u.progress.filter((p: any) => p.completed).length
       return acc
     }, {} as Record<string, number>)
     const avgProgress = totalUsers > 0
-      ? Object.values(completedMap).reduce((a, b) => a + b, 0) / totalUsers / totalLessons * 100
+      ? Object.values(completedMap).reduce((a: number, b: any) => a + (b as number), 0) / totalUsers / totalLessons * 100
       : 0
     return {
       id: c.id,

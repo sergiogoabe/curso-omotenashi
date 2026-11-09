@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Key, CheckCircle, Loader2, ArrowRight } from "lucide-react"
 
 function AtivarForm() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const initialCode = searchParams.get("code") || ""
   const [code, setCode] = useState(initialCode)
@@ -36,7 +35,6 @@ function AtivarForm() {
         return
       }
       setSuccess(true)
-      setTimeout(() => router.push("/auth/login"), 3000)
     } catch {
       setError("Não foi possível conectar. Tente novamente.")
     } finally {
@@ -50,8 +48,8 @@ function AtivarForm() {
         <Card className="w-full max-w-md border-border/50">
           <CardContent className="py-12 text-center space-y-4">
             <CheckCircle className="h-16 w-16 text-green-400 mx-auto" />
-            <h2 className="text-2xl font-bold">Conta Ativada!</h2>
-            <p className="text-muted-foreground">Redirecionando para o login...</p>
+            <h2 className="text-2xl font-bold">Conta criada</h2>
+            <p className="text-muted-foreground">Confirme o email que enviamos antes de entrar. O link vale 24 horas.</p>
           </CardContent>
         </Card>
       </div>

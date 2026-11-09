@@ -29,9 +29,9 @@ export async function GET() {
     orderBy: { name: "asc" },
   })
 
-  const report = employees.map(emp => {
-    const completed = emp.progress.filter(p => p.completed).length
-    const inProgress = emp.progress.filter(p => !p.completed).length
+  const report = employees.map((emp: any) => {
+    const completed = emp.progress.filter((p: any) => p.completed).length
+    const inProgress = emp.progress.filter((p: any) => !p.completed).length
     return {
       id: emp.id,
       name: emp.name || "Sem nome",
@@ -42,8 +42,8 @@ export async function GET() {
       inProgressLessons: inProgress,
       totalLessons,
       progressPercent: totalLessons > 0 ? Math.round((completed / totalLessons) * 100) : 0,
-      enrolled: emp.enrollments.some(e => e.active),
-      recentActivity: emp.progress.slice(-5).reverse().map(p => ({
+      enrolled: emp.enrollments.some((e: any) => e.active),
+      recentActivity: emp.progress.slice(-5).reverse().map((p: any) => ({
         lessonTitle: p.lesson?.title,
         completed: p.completed,
         date: p.updatedAt,
@@ -56,10 +56,10 @@ export async function GET() {
     companyEmail: user.company.email,
     companyPlan: user.company.plan,
     totalEmployees: employees.length,
-    enrolledEmployees: employees.filter(e => e.enrollments.some(e => e.active)).length,
+    enrolledEmployees: employees.filter((e: any) => e.enrollments.some((e: any) => e.active)).length,
     avgProgress: employees.length > 0
-      ? Math.round(employees.reduce((sum, e) => {
-          const c = e.progress.filter(p => p.completed).length
+      ? Math.round(employees.reduce((sum: number, e: any) => {
+          const c = e.progress.filter((p: any) => p.completed).length
           return sum + (totalLessons > 0 ? (c / totalLessons) * 100 : 0)
         }, 0) / employees.length)
       : 0,

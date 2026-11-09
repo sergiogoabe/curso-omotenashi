@@ -8,18 +8,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Copy, Check, Loader2, ArrowRight, Building2, User, Users, Smartphone } from "lucide-react"
-
-const PIX_KEY = "07030124600"
+import { PIX_KEY } from "@/lib/pix"
 
 const PLANS = [
-  {
-    id: "free",
-    label: "Plano Free",
-    desc: "Acesso inicial",
-    value: 2.0,
-    icon: User,
-    badge: "COMECE AQUI",
-  },
   {
     id: "individual",
     label: "Individual",
@@ -172,14 +163,22 @@ export default function Register() {
               </div>
             )}
 
-            <div className="bg-amber-950/20 border border-amber-500/20 rounded-lg p-4 space-y-2">
-              <p className="text-sm text-amber-400 font-medium text-center">
-                ✅ Cadastro registrado com sucesso!
+            <div className="bg-green-950/30 border border-green-500/30 rounded-lg p-4 space-y-3">
+              <p className="text-sm text-green-400 font-bold text-center">
+                ✅ Cadastro criado! Agora finalize o pagamento
               </p>
-              <p className="text-xs text-muted-foreground text-center leading-relaxed">
-                Após realizar o pagamento, aguarde o email de ativação.
-                Assim que eu confirmar o recebimento do PIX, enviarei um
-                código de ativação para <strong>{email}</strong>.
+            </div>
+
+            <div className="bg-blue-950/30 border border-blue-500/30 rounded-lg p-4 space-y-3">
+              <p className="text-sm text-blue-400 font-bold">📨 Próximos Passos:</p>
+              <ul className="text-xs text-muted-foreground space-y-2 ml-2">
+                <li>✓ Escaneie o QR Code ou copie a chave PIX acima</li>
+                <li>✓ Realize o pagamento no seu banco</li>
+                <li>✓ Após confirmação, você receberá um código de ativação</li>
+                <li>✓ Use o código em /auth/ativar para liberar acesso</li>
+              </ul>
+              <p className="text-xs text-amber-400 font-semibold border-t border-blue-500/20 pt-2">
+                ⏱️ Tempo até ativação: até 24h
               </p>
             </div>
           </CardContent>

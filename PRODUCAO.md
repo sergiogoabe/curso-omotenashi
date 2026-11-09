@@ -1,5 +1,13 @@
 # Verificação de produção
 
+## Revisão em 2026-11-09 — verificação de email no cadastro
+
+- **Novo fluxo de verificação de email** (commits pendentes deste dia): conta só entra depois de clicar no link enviado por email (token SHA-256 de 64 hex, expira em 24h, tabela `VerificationToken` já existente). Contas antigas foram marcadas como verificadas pela migration `20261105170000_verify_existing_emails`.
+- **Login auto-recupera**: se o dono da conta (senha correta) tentar entrar sem email verificado e não existir token válido, o sistema reemite e reenvia o link automaticamente.
+- Hardening desta passada: escape de HTML no email de pagamento (anti-injeção de markup no nome), timeout de 5s + guard de API key no sync do ERP, chave PIX centralizada em `lib/pix.ts` (`PIX_KEY`), fallback de URL base corrigido para `curso-omotenashi.vercel.app`, e tratamento de erro no `/api/auth/verify-email` (usuário deletado → 400 limpo em vez de 500).
+- `npm run typecheck`: passou. `npm test`: 25/25.
+- **Pendente (configuração, não código):** verificação do domínio no Resend continua pendente no DNS (GoDaddy) — sem ela, o email de verificação/PIX pode não ser entregue e o link cai no log de runtime. Ver `LAUNCH-READINESS-REPORT.md` item 2.
+
 ## Revisão em 2026-10-18
 
 - Site publicado (`https://curso-omotenashi.vercel.app/`): HTTP 200.

@@ -36,7 +36,6 @@ export function Footer() {
               <a href="mailto:contato@omotenashi.com" className="hover:text-foreground transition-colors">contato@omotenashi.com</a>
               <Link href="/privacidade" className="hover:text-foreground transition-colors">Política de Privacidade</Link>
               <Link href="/termos" className="hover:text-foreground transition-colors">Termos de Uso</Link>
-              <span>🇧🇷 Feito no Brasil com ♥</span>
               <span className="text-xs mt-2">Infinity Agency . 2026 . All Rights Reserved</span>
             </div>
           </div>

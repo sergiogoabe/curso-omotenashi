@@ -16,10 +16,10 @@ export async function GET() {
   })
   const stats = {
     total: enrollments.length,
-    individual: enrollments.filter(e => e.plan === "individual").length,
-    business: enrollments.filter(e => e.plan !== "individual").length,
-    active: enrollments.filter(e => e.active).length,
-    revenue: enrollments.reduce((sum, e) => sum + getPlanValue(e.plan), 0),
+    individual: enrollments.filter((e: any) => e.plan === "individual").length,
+    business: enrollments.filter((e: any) => e.plan !== "individual").length,
+    active: enrollments.filter((e: any) => e.active).length,
+    revenue: enrollments.reduce((sum: number, e: any) => sum + getPlanValue(e.plan), 0),
   }
 
   return NextResponse.json({ enrollments, stats })

@@ -13,6 +13,7 @@ node_modules
 *.bak
 *.orig
 *.tmp
+asf_steer*.txt
 
 # AndroidIDE-generated Gradle artifacts (this is a Next.js web app)
 .gradle

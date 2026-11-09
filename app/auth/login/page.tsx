@@ -30,7 +30,7 @@ export default function Login() {
         redirect: false,
       })
       if (!result?.ok || result.error) {
-        setError("Usuário ou senha inválidos")
+        setError(result?.error && result.error !== "CredentialsSignin" ? result.error : "Usuário ou senha inválidos")
         return
       }
       const callbackUrl = new URLSearchParams(window.location.search).get("callbackUrl")

@@ -42,7 +42,7 @@ export async function POST(req: Request) {
     select: { id: true },
   })
 
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: any) => {
     await tx.pendingRegistration.update({
       where: { id },
       data: { activationCode: code },

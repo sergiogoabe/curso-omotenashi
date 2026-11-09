@@ -102,7 +102,7 @@ const eventSelect = `
 
 export async function listEvents() {
   await ensureEventsTable()
-  const rows = await prisma.$queryRawUnsafe<EventRow[]>(`${eventSelect} ORDER BY e."startsAt" DESC`)
+  const rows = await prisma.$queryRawUnsafe(`${eventSelect} ORDER BY e."startsAt" DESC`) as EventRow[]
   return rows.map(mapEvent)
 }
 

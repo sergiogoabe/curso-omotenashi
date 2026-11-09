@@ -1,9 +1,4 @@
 export const PLANS = {
-  free: {
-    label: "Omotenashi - Plano Free",
-    value: 2,
-    description: "Acesso inicial ao Omotenashi",
-  },
   individual: {
     label: "Omotenashi - Plano Pessoal",
     value: 197,

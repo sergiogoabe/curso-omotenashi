@@ -94,7 +94,7 @@ export async function GET() {
     revenue,
     revenuePending,
     payments,
-    plans: planGroups.map((row) => ({ plan: row.plan, count: typeof row._count === "number" ? row._count : 0 })),
+    plans: planGroups.map((row: any) => ({ plan: row.plan, count: typeof row._count === "number" ? row._count : 0 })),
     recentPayments,
     recentUsers,
     upcomingEvents: nextEvents,

@@ -17,8 +17,29 @@ function load(file, mocks = {}, globals = {}) {
 }
 
 const { registrationSchema } = load('./lib/registration.ts')
+const { hashEmailToken } = load('./lib/email-verify.ts', { 'node:crypto': require('node:crypto') })
 const { gerarPixPayload, crc16 } = load('./lib/pix.ts')
 const valid = { name: 'Aluno Teste', email: '  ALUNO@example.com ', password: 'teste123', plan: 'individual' }
+
+test('email verify token is hashed, not stored raw', () => {
+  const raw = 'a'.repeat(64)
+  const hash = hashEmailToken(raw)
+  assert.equal(hash.length, 64)
+  assert.notEqual(hash, raw)
+})
+
+test('PIX payload embeds the shared PIX key', () => {
+  const { PIX_KEY } = load('./lib/pix.ts')
+  const payload = gerarPixPayload(197)
+  const fields = parseTLV(payload)
+  const merchant = parseTLV(fields['26'])
+  assert.equal(merchant['01'], PIX_KEY)
+})
+
+test('escapeHtml neutralizes markup before email interpolation', () => {
+  const { escapeHtml } = load('./lib/email.ts', {}, { process: { env: {} } })
+  assert.equal(escapeHtml('<script>alert("x")&</script>'), '&lt;script&gt;alert(&quot;x&quot;)&amp;&lt;/script&gt;')
+})
 
 test('registration trims name and normalizes email', () => {
   const result = registrationSchema.parse({ ...valid, name: '  Aluno Teste  ' })
@@ -134,6 +155,8 @@ test('Asaas checkout creates PIX payment without sending password', async () => 
     '@/lib/rate-limit': { rateLimit: async () => ({ ok: true, remaining: 99, retryAfter: 0 }), clientIp: () => 'unit', tooMany: () => new Response(null, { status: 429 }) },
     '@/lib/pix': { gerarPixPayload },
     '@/lib/plans': { PLANS },
+    '@/lib/email': { sendEmail: async () => true, escapeHtml: (v) => v },
+    qrcode: { toDataURL: async () => 'data:image/png;base64,dGVzdA==' },
   }, { process: { env: {} }, fetch: async () => ({ ok: true, json: async () => ({}) }) })
   const response = await POST(new Request('http://localhost/api/register', { method: 'POST', body: JSON.stringify(valid) }))
   assert.equal(response.status, 200)
