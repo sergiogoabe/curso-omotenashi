@@ -38,7 +38,7 @@ export default function AdminOverview() {
         <StatLink href="/admin/pagamentos" label="Receita confirmada" value={formatBRL(stats.revenue)} hint={`${formatBRL(stats.revenuePending)} em aberto`} icon={Wallet} tone="text-emerald-400" />
         <StatLink href="/admin/clientes" label="Clientes" value={stats.users} hint={`${stats.courseAccess} com acesso`} icon={Users} tone="text-blue-400" />
         <StatLink href="/admin/vendas" label="Matrículas ativas" value={stats.activeEnrollments} hint={`${stats.enrollments} no total`} icon={GraduationCap} tone="text-purple-400" />
-        <StatLink href="/admin/ativacoes" label="Ativações pendentes" value={stats.pending} hint="Cadastros aguardando código" icon={KeyRound} tone="text-amber-400" />
+        <StatLink href="/admin/ativacoes" label="Ativações pendentes" value={stats.pending} hint="PIX aguardando pagamento" icon={KeyRound} tone="text-amber-400" />
         <StatLink href="/admin/associados" label="Associados" value={stats.associates} hint="Colaboradores de empresas" icon={UserPlus} tone="text-cyan-400" />
         <StatLink href="/admin/empresas" label="Empresas" value={stats.companies} hint="Contas corporativas" icon={Building2} tone="text-orange-400" />
         <StatLink href="/admin/eventos" label="Eventos à frente" value={stats.eventsUpcoming} hint="Turmas, selo e consultoria" icon={Calendar} tone="text-red-400" />
@@ -113,6 +113,13 @@ export default function AdminOverview() {
           <CardHeader><CardTitle className="text-lg">Operação</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
             <Row label="Integrações" value="Ver painel" href="/admin/configuracoes" />
+            <div className="flex items-center justify-between gap-3 py-1">
+              <span className="text-muted-foreground">Webhook Asaas</span>
+              <span className={`flex items-center gap-1.5 font-medium ${stats.webhook.lastAt ? "text-green-400" : "text-red-400"}`}>
+                <span className={`inline-block h-2 w-2 rounded-full ${stats.webhook.lastAt ? "bg-green-400" : "bg-red-400"}`} />
+                {webhookSummary(stats.webhook)}
+              </span>
+            </div>
             <Row label="Fórum em aberto" value={String(stats.forumOpen)} href="/admin/forum" />
             <Row label="Aulas publicadas" value={String(stats.lessons)} href="/admin/produto" />
             <Row label="Capítulos do e-book" value={String(stats.chapters)} href="/admin/produto" />
@@ -137,4 +144,11 @@ function Row({ label, value, href }: { label: string; value: string; href: strin
       <span className="font-medium">{value}</span>
     </Link>
   )
+}
+
+function webhookSummary(webhook: OverviewStats["webhook"]) {
+  if (!webhook.lastAt) return "sem eventos"
+  const diffH = Math.floor((Date.now() - new Date(webhook.lastAt).getTime()) / 3_600_000)
+  const when = diffH < 1 ? "agora" : diffH < 48 ? `há ${diffH}h` : `há ${Math.floor(diffH / 24)}d`
+  return `${when} · ${webhook.today} hoje · ${webhook.activationsToday} ativações`
 }

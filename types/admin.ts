@@ -3,6 +3,7 @@ export type ClientRow = {
   name: string | null
   email: string
   role: string
+  emailVerified: boolean
   phone: string | null
   plan: string
   courseAccess: boolean
@@ -23,6 +24,7 @@ export type PaymentRow = {
   value: number
   status: string
   paymentMethod: string
+  asaasId?: string | null
   createdAt: string
   user: { id: string; name: string | null; email: string } | null
 }
@@ -59,6 +61,12 @@ export type OverviewStats = {
   revenuePending: number
   payments: number
   plans: { plan: string; count: number }[]
+  webhook: {
+    lastEvent: string | null
+    lastAt: string | null
+    today: number
+    activationsToday: number
+  }
   recentPayments: PaymentRow[]
   recentUsers: { id: string; name: string | null; email: string; plan: string; courseAccess: boolean; createdAt: string; company: { name: string } | null }[]
   upcomingEvents: EventRow[]

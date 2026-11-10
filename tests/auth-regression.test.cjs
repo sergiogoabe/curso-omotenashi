@@ -266,6 +266,8 @@ function webhookHarness({ tokenOk = true, pending = null, existingUser = null } 
   const createdPayment = []
   const sync = []
   const sent = []
+  const activated = []
+  const pings = []
   const prisma = {
     pendingRegistration: {
       findFirst: async () => pending,
@@ -278,12 +280,14 @@ function webhookHarness({ tokenOk = true, pending = null, existingUser = null } 
     }),
     verificationToken: { create: async ({ data }) => { createdToken.push(data) } },
     payment: { create: async ({ data }) => { createdPayment.push(data) } },
+    webhookPing: { create: async ({ data }) => { pings.push(data); return { id: 'ping-1', ...data } } },
   }
   const { POST } = load('app/api/webhooks/asaas/route.ts', {
     'next/server': { NextResponse: { json: (body, init) => Response.json(body, init) } },
     '@/lib/prisma': { prisma },
     '@/lib/access': { syncCourseAccess: async (input) => { sync.push(input) } },
     '@/lib/asaas/asaas': { validarTokenWebhook: () => tokenOk },
+    '@/lib/asaas/ativar': { ativarRegistro: async (reg, paymentId) => { activated.push({ reg, paymentId }); return { userId: 'user-1', verifyLink: 'https://example.com/verify-email?token=t', emailSent: true } } },
     '@/lib/email': { emailEnabled: () => true, sendEmail: async (opts) => { sent.push(opts); return true }, verifyEmailTemplate: (link) => ({ subject: 'verify', html: `<a href="${link}">verify</a>` }) },
     '@/lib/email-verify': { newEmailToken: () => ({ token: 'raw-token', hash: 'hashed-token', expires: new Date() }), verifyEmailLink: (t) => `https://example.com/verify-email?token=${t}` },
   }, { process: { env: {} } })
@@ -292,7 +296,7 @@ function webhookHarness({ tokenOk = true, pending = null, existingUser = null } 
     headers: { 'asaas-access-token': token },
     body: typeof payload === 'string' ? payload : JSON.stringify(payload),
   }))
-  return { call, deleted, createdUser, createdToken, createdPayment, sync, sent }
+  return { call, deleted, createdUser, createdToken, createdPayment, sync, sent, activated, pings }
 }
 
 const webhookPayment = { id: 'pay_123', externalReference: 'registration-test', value: 197, status: 'RECEIVED' }
@@ -322,12 +326,52 @@ test('webhook activates account on PAYMENT_RECEIVED', async () => {
   const h = webhookHarness({ pending: { id: 'registration-test', name: 'Aluno Teste', email: 'aluno@example.com', password: '$2hash', plan: 'individual', value: 197, asaasPaymentId: 'pay_123' } })
   const response = await h.call({ event: 'PAYMENT_RECEIVED', payment: webhookPayment })
   assert.equal(response.status, 200)
-  // User created from pending registration data, no password leak in response
+  // Activation delegated to the shared lib with pending + Asaas payment id
+  assert.equal(h.activated.length, 1)
+  assert.equal(h.activated[0].reg.email, 'aluno@example.com')
+  assert.equal(h.activated[0].paymentId, 'pay_123')
+  // Health ping recorded for the delivery
+  assert.equal(h.pings.length, 1)
+  assert.equal(h.pings[0].event, 'PAYMENT_RECEIVED')
+  assert.equal(h.pings[0].paymentId, 'pay_123')
+})
+
+function ativarHarness() {
+  const deleted = []
+  const createdUser = []
+  const createdToken = []
+  const createdPayment = []
+  const sync = []
+  const sent = []
+  const prisma = {
+    $transaction: async (fn) => fn({
+      user: { create: async ({ data }) => { createdUser.push(data); return { id: 'user-1', ...data } } },
+      pendingRegistration: { delete: async ({ where }) => { deleted.push(where.id) } },
+    }),
+    verificationToken: { create: async ({ data }) => { createdToken.push(data) } },
+    payment: { create: async ({ data }) => { createdPayment.push(data); return { id: 'pay-row' } } },
+  }
+  const { ativarRegistro } = load('lib/asaas/ativar.ts', {
+    '@/lib/prisma': { prisma },
+    '@/lib/access': { syncCourseAccess: async (input) => { sync.push(input) } },
+    '@/lib/email': { emailEnabled: () => true, sendEmail: async (opts) => { sent.push(opts); return true }, verifyEmailTemplate: (link) => ({ subject: 'verify', html: `<a href="${link}">verify</a>` }) },
+    '@/lib/email-verify': { newEmailToken: () => ({ token: 'raw-token', hash: 'hashed-token', expires: new Date() }), verifyEmailLink: (t) => `https://example.com/verify-email?token=${t}` },
+  }, { process: { env: {} } })
+  return { ativarRegistro, deleted, createdUser, createdToken, createdPayment, sync, sent }
+}
+
+test('ativarRegistro creates account, payment and verification email', async () => {
+  const h = ativarHarness()
+  const pending = { id: 'registration-test', name: 'Aluno Teste', email: 'aluno@example.com', password: '$2hash', plan: 'individual', value: 197 }
+  const result = await h.ativarRegistro(pending, 'pay_123')
+  // User created from pending registration data, no password leak in return
   assert.equal(h.createdUser.length, 1)
   assert.equal(h.createdUser[0].email, 'aluno@example.com')
   assert.equal(h.createdUser[0].password, '$2hash')
   assert.equal(h.createdUser[0].plan, 'individual')
   assert.equal(h.createdUser[0].role, 'student')
+  assert.equal(result.userId, 'user-1')
+  assert.equal(result.emailSent, true)
   // Pending registration consumed, access synced, payment recorded with Asaas id
   assert.deepEqual(h.deleted, ['registration-test'])
   assert.equal(h.sync[0].active, true)

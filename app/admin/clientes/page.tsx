@@ -37,6 +37,8 @@ export default function AdminClientes() {
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState("all")
   const [draft, setDraft] = useState<Draft | null>(null)
+  const [notice, setNotice] = useState("")
+  const [sending, setSending] = useState<string | null>(null)
 
   function load() {
     return adminFetch<{ users: ClientRow[]; total: number; companies: CompanyOption[] }>("/api/admin/clients").then((data) => {
@@ -71,6 +73,7 @@ export default function AdminClientes() {
       || (filter === "blocked" && !access)
       || (filter === "admin" && user.role === "admin")
       || (filter === "company" && Boolean(user.companyId))
+      || (filter === "unverified" && !user.emailVerified)
     return matchesQuery && matchesFilter
   }), [users, query, filter])
 
@@ -87,6 +90,25 @@ export default function AdminClientes() {
     })
   }
 
+  async function reenviarVerificacao(user: ClientRow) {
+    setSending(user.id)
+    setError("")
+    setNotice("")
+    try {
+      const data = await adminFetch<{ sent: boolean; link?: string }>("/api/admin/users", {
+        method: "POST",
+        body: JSON.stringify({ userId: user.id }),
+      })
+      setNotice(data.sent
+        ? `Email de verificação reenviado para ${user.email}.`
+        : `Falha no envio para ${user.email}. Link manual: ${data.link ?? "—"}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao reenviar")
+    } finally {
+      setSending(null)
+    }
+  }
+
   if (loading) return <AdminLoading />
 
   return (
@@ -95,7 +117,8 @@ export default function AdminClientes() {
         title="Clientes"
         description="Contas de alunos e compradores. Liberar o acesso cria ou reativa a matrícula; revogar suspende as matrículas ativas."
       />
-      {error ? <p className="mb-4 text-sm text-red-400">{error}</p> : null}
+              {error ? <p className="mb-4 text-sm text-red-400">{error}</p> : null}
+      {notice ? <p className="mb-4 text-sm text-green-400">{notice}</p> : null}
 
       {draft ? (
         <Card className="mb-6 border-border/50">
@@ -167,6 +190,7 @@ export default function AdminClientes() {
                 <option value="access">Com acesso</option>
                 <option value="blocked">Sem acesso</option>
                 <option value="company">Com empresa</option>
+                <option value="unverified">Email não verificado</option>
                 <option value="admin">Admins</option>
               </select>
             </div>
@@ -199,6 +223,17 @@ export default function AdminClientes() {
                     <td className="px-2 py-3">{user.company?.name || "—"}</td>
                     <td className="px-2 py-3 text-muted-foreground">{formatDate(user.createdAt)}</td>
                     <td className="px-2 py-3 text-right">
+                      {user.emailVerified ? null : (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={sending === user.id}
+                          onClick={() => reenviarVerificacao(user)}
+                        >
+                          {sending === user.id ? "Enviando..." : "Reenviar email"}
+                        </Button>
+                      )}
                       <Button type="button" variant="ghost" size="sm" onClick={() => edit(user)}>Editar</Button>
                       <Button
                         type="button"

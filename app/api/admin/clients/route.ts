@@ -12,6 +12,7 @@ const clientSelect = {
   name: true,
   email: true,
   role: true,
+  emailVerified: true,
   phone: true,
   plan: true,
   courseAccess: true,

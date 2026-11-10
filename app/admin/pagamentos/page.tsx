@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { ExternalLink } from "lucide-react"
 import { AdminLoading, EmptyNote, Field, PageHeading, fieldClass } from "@/components/admin/ui"
 import { adminFetch } from "@/components/admin/http"
 import { formatBRL, formatDate } from "@/lib/format"
@@ -50,6 +51,20 @@ export default function AdminPagamentos() {
       setError(err instanceof Error ? err.message : "Falha na operação")
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function abrirFatura(row: PaymentRow) {
+    setError("")
+    try {
+      const data = await adminFetch<{ invoiceUrl: string | null }>("/api/admin/payments/invoice", {
+        method: "POST",
+        body: JSON.stringify({ id: row.id }),
+      })
+      if (data.invoiceUrl) window.open(data.invoiceUrl, "_blank", "noopener")
+      else setError("O Asaas não retornou fatura para esta cobrança.")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha ao consultar fatura")
     }
   }
 
@@ -192,6 +207,12 @@ export default function AdminPagamentos() {
                       </td>
                       <td className="px-2 py-3 text-muted-foreground">{formatDate(row.createdAt)}</td>
                       <td className="px-2 py-3 text-right">
+                        {row.asaasId ? (
+                          <Button type="button" variant="ghost" size="sm" className="gap-1" onClick={() => abrirFatura(row)}>
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Fatura
+                          </Button>
+                        ) : null}
                         <Button
                           type="button"
                           variant="ghost"

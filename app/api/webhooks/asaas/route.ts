@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { syncCourseAccess } from "@/lib/access"
 import { validarTokenWebhook } from "@/lib/asaas/asaas"
-import { emailEnabled, sendEmail, verifyEmailTemplate } from "@/lib/email"
-import { newEmailToken, verifyEmailLink } from "@/lib/email-verify"
+import { ativarRegistro } from "@/lib/asaas/ativar"
 
 export const dynamic = "force-dynamic"
 
@@ -11,6 +9,7 @@ export const dynamic = "force-dynamic"
  * Webhook Asaas — ativação automática da conta após pagamento PIX confirmado.
  * Fluxo: PAYMENT_RECEIVED/PAYMENT_CONFIRMED → localiza PendingRegistration pelo
  * asaasPaymentId (ou externalReference) → cria User + Enrollment + email de verificação.
+ * Cada entrega válida é registrada em WebhookPing (saúde visível no admin).
  */
 export async function POST(req: Request) {
   const rawBody = await req.text()
@@ -36,6 +35,13 @@ export async function POST(req: Request) {
   }
 
   if (!payment?.id) return NextResponse.json({ received: true })
+
+  if (event) {
+    void prisma.webhookPing
+      .create({ data: { event, paymentId: payment.id } })
+      .catch(() => {})
+  }
+
   if (event !== "PAYMENT_RECEIVED" && event !== "PAYMENT_CONFIRMED") {
     return NextResponse.json({ received: true })
   }
@@ -57,53 +63,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true })
     }
 
-    const user = await prisma.$transaction(async (tx: any) => {
-      const created = await tx.user.create({
-        data: {
-          name: pending.name,
-          email: pending.email,
-          password: pending.password,
-          role: "student",
-          plan: pending.plan,
-        },
-      })
-      await tx.pendingRegistration.delete({ where: { id: pending.id } })
-      return created
-    })
+    await ativarRegistro(pending, payment.id)
 
-    await syncCourseAccess({
-      userId: user.id,
-      plan: pending.plan,
-      active: true,
-    })
-
-    await prisma.payment.create({
-      data: {
-        asaasId: payment.id,
-        userId: user.id,
-        email: pending.email,
-        name: pending.name,
-        plan: pending.plan,
-        value: pending.value,
-        status: "paid",
-        paymentMethod: "pix",
-      },
-    }).catch(() => {})
-
-    const issued = newEmailToken()
-    await prisma.verificationToken.create({
-      data: { identifier: user.email, token: issued.hash, expires: issued.expires },
-    })
-    const link = verifyEmailLink(issued.token)
-    if (emailEnabled()) {
-      const tpl = verifyEmailTemplate(link)
-      const sent = await sendEmail({ to: user.email, subject: tpl.subject, html: tpl.html })
-      if (!sent) console.error(`[Verify Email] Falha ao enviar para ${user.email} — link de recuperação: ${link}`)
-    } else {
-      console.log(`[Verify Email] ${user.email} ${link}`)
-    }
-
-    console.log(`[Asaas Webhook] Conta ativada: ${user.email} (pagamento ${payment.id})`)
+    console.log(`[Asaas Webhook] Conta ativada: ${pending.email} (pagamento ${payment.id})`)
     return NextResponse.json({ received: true })
   } catch (error) {
     console.error("Asaas webhook error:", error)

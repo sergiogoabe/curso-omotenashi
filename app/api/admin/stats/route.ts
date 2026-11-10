@@ -6,6 +6,11 @@ import { upcomingEvents } from "@/lib/events"
 
 export const dynamic = "force-dynamic"
 
+function startOfDay(): Date {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate())
+}
+
 export async function GET() {
   const session = await requireAdmin()
   if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
@@ -25,6 +30,9 @@ export async function GET() {
     planGroups,
     recentPayments,
     recentUsers,
+    lastPing,
+    pingsToday,
+    activationsToday,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.lesson.count(),
@@ -56,6 +64,9 @@ export async function GET() {
         company: { select: { name: true } },
       },
     }),
+    prisma.webhookPing.findFirst({ orderBy: { createdAt: "desc" } }),
+    prisma.webhookPing.count({ where: { createdAt: { gte: startOfDay() } } }),
+    prisma.payment.count({ where: { asaasId: { not: null }, createdAt: { gte: startOfDay() } } }),
   ])
 
   let revenue = 0
@@ -98,5 +109,11 @@ export async function GET() {
     recentPayments,
     recentUsers,
     upcomingEvents: nextEvents,
+    webhook: {
+      lastEvent: lastPing?.event ?? null,
+      lastAt: lastPing?.createdAt ?? null,
+      today: pingsToday,
+      activationsToday,
+    },
   })
 }

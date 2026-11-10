@@ -85,6 +85,13 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model WebhookPing {
+  id        String   @id @default(cuid())
+  event     String
+  paymentId String?
+  createdAt DateTime @default(now())
+}
+
 model Category {
   id       String   @id @default(cuid())
   name     String
