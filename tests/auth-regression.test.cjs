@@ -16,10 +16,10 @@ function load(file, mocks = {}, globals = {}) {
   return module.exports
 }
 
-const { registrationSchema } = load('./lib/registration.ts')
+const { registrationSchema, isValidCpf } = load('./lib/registration.ts')
 const { hashEmailToken } = load('./lib/email-verify.ts', { 'node:crypto': require('node:crypto') })
 const { gerarPixPayload, crc16 } = load('./lib/pix.ts')
-const valid = { name: 'Aluno Teste', email: '  ALUNO@example.com ', password: 'teste123', plan: 'individual' }
+const valid = { name: 'Aluno Teste', email: '  ALUNO@example.com ', password: 'teste123', plan: 'individual', cpf: '529.982.247-25' }
 
 test('email verify token is hashed, not stored raw', () => {
   const raw = 'a'.repeat(64)
@@ -57,6 +57,23 @@ for (const [label, input] of Object.entries({
 })) {
   test(`registration rejects ${label}`, () => assert.equal(registrationSchema.safeParse(input).success, false))
 }
+for (const [label, cpf] of Object.entries({
+  'repeated digits': '111.111.111-11',
+  'wrong check digit': '529.982.247-24',
+  'too short': '1234567890',
+  'letters': 'abc.def.ghi-jk',
+  'missing': undefined,
+})) {
+  test(`registration rejects CPF ${label}`, () => assert.equal(registrationSchema.safeParse({ ...valid, cpf }).success, false))
+}
+test('registration normalizes CPF to digits', () => {
+  assert.equal(registrationSchema.parse(valid).cpf, '52998224725')
+})
+test('isValidCpf accepts known valid CPF', () => {
+  assert.ok(isValidCpf('52998224725'))
+  assert.ok(isValidCpf('529.982.247-25'))
+  assert.equal(isValidCpf('11111111111'), false)
+})
 
 function parseTLV(value) {
   const fields = {}
@@ -169,6 +186,176 @@ test('Asaas checkout creates PIX payment without sending password', async () => 
   assert.ok(body.pixQR)
   assert.equal(body.plan, 'individual')
   assert.ok(!Object.hasOwn(body, 'password'))
+})
+
+function registerAsaasHarness(asaasMocks, env) {
+  let persisted, updated
+  const prisma = {
+    user: { findUnique: async () => null },
+    pendingRegistration: {
+      findUnique: async () => null,
+      create: async ({ data }) => { persisted = data; return { ...data, id: 'registration-test' } },
+      update: async ({ where, data }) => { updated = { where, data }; return { ...data, id: where.id } },
+    },
+    payment: { upsert: async () => ({}) },
+  }
+  const { gerarPixPayload } = load('./lib/pix.ts')
+  const { PLANS } = load('./lib/plans.ts')
+  const { POST } = load('app/api/register/route.ts', {
+    '@/lib/prisma': { prisma },
+    '@/lib/registration': { registrationSchema },
+    '@/lib/rate-limit': { rateLimit: async () => ({ ok: true, remaining: 99, retryAfter: 0 }), clientIp: () => 'unit', tooMany: () => new Response(null, { status: 429 }) },
+    '@/lib/pix': { gerarPixPayload },
+    '@/lib/plans': { PLANS },
+    '@/lib/email': { sendEmail: async () => true, escapeHtml: (v) => v },
+    qrcode: { toDataURL: async () => 'data:image/png;base64,dGVzdA==' },
+    '@/lib/asaas/asaas': asaasMocks,
+  }, { process: { env }, fetch: async () => ({ ok: true, json: async () => ({}) }) })
+  return { POST, persisted: () => persisted, updated: () => updated, gerarPixPayload }
+}
+
+test('register creates dynamic Asaas PIX when API key present', async () => {
+  const calls = []
+  const h = registerAsaasHarness({
+    criarCliente: async (name, email, cpf) => { calls.push(['customer', name, email, cpf]); return { id: 'cus_1', name, email, cpfCnpj: cpf } },
+    criarCobrancaPix: async (input) => { calls.push(['charge', input]); return { id: 'pay_123', value: input.valorCentavos / 100, status: 'PENDING', dueDate: input.vencimento, invoiceUrl: 'https://sandbox.asaas.com/i/pay_123' } },
+    obterPixQrCode: async (id) => { calls.push(['qr', id]); return { payload: 'PIX-DYNAMIC-PAYLOAD', encodedImage: 'QUJD' } },
+  }, { ASAAS_API_KEY: 'test-key' })
+  const response = await h.POST(new Request('http://localhost/api/register', { method: 'POST', body: JSON.stringify(valid) }))
+  assert.equal(response.status, 200)
+  const body = await response.json()
+  // Customer created with normalized CPF and charge tied to registration id
+  assert.deepEqual(calls[0], ['customer', 'Aluno Teste', 'aluno@example.com', '52998224725'])
+  assert.equal(calls[1][1].customerId, 'cus_1')
+  assert.equal(calls[1][1].valorCentavos, 19700)
+  assert.equal(calls[1][1].externalReference, 'registration-test')
+  assert.equal(calls[2][1], 'pay_123')
+  // Pending registration persisted with CPF and linked to Asaas payment
+  assert.equal(h.persisted().cpf, '52998224725')
+  assert.equal(h.updated().where.id, 'registration-test')
+  assert.equal(h.updated().data.asaasPaymentId, 'pay_123')
+  assert.equal(h.updated().data.pixPayload, 'PIX-DYNAMIC-PAYLOAD')
+  // Response returns dynamic payload and normalized data URL image
+  assert.equal(body.pixPayload, 'PIX-DYNAMIC-PAYLOAD')
+  assert.equal(body.pixQR, 'data:image/png;base64,QUJD')
+  assert.ok(!Object.hasOwn(body, 'password'))
+})
+
+test('register falls back to static PIX when Asaas fails', async () => {
+  const h = registerAsaasHarness({
+    criarCliente: async () => { throw new Error('asaas down') },
+  }, { ASAAS_API_KEY: 'test-key' })
+  const response = await h.POST(new Request('http://localhost/api/register', { method: 'POST', body: JSON.stringify(valid) }))
+  assert.equal(response.status, 200)
+  const body = await response.json()
+  assert.equal(body.pixPayload, h.gerarPixPayload(197))
+  assert.equal(body.pixQR, 'data:image/png;base64,dGVzdA==')
+})
+
+test('asaas webhook signature verification uses HMAC of raw body', async () => {
+  const { createHmac } = require('node:crypto')
+  const { verificarAssinaturaWebhook } = load('./lib/asaas/asaas.ts', {}, { process: { env: { ASAAS_WEBHOOK_SECRET: 's3cret' } }, Buffer })
+  const body = JSON.stringify({ event: 'PAYMENT_RECEIVED', payment: { id: 'pay_1' } })
+  const sig = createHmac('sha256', 's3cret').update(body, 'utf8').digest('hex')
+  assert.equal(await verificarAssinaturaWebhook(body, sig), true)
+  assert.equal(await verificarAssinaturaWebhook(body, sig.replace(/.$/, 'x')), false)
+  assert.equal(await verificarAssinaturaWebhook(body, ''), false)
+})
+
+function webhookHarness({ signatureOk = true, pending = null, existingUser = null } = {}) {
+  const deleted = []
+  const createdUser = []
+  const createdToken = []
+  const createdPayment = []
+  const sync = []
+  const sent = []
+  const prisma = {
+    pendingRegistration: {
+      findFirst: async () => pending,
+      delete: async ({ where }) => { deleted.push(where.id) },
+    },
+    user: { findUnique: async () => existingUser },
+    $transaction: async (fn) => fn({
+      user: { create: async ({ data }) => { createdUser.push(data); return { id: 'user-1', ...data } } },
+      pendingRegistration: { delete: async ({ where }) => { deleted.push(where.id) } },
+    }),
+    verificationToken: { create: async ({ data }) => { createdToken.push(data) } },
+    payment: { create: async ({ data }) => { createdPayment.push(data) } },
+  }
+  const { POST } = load('app/api/webhooks/asaas/route.ts', {
+    'next/server': { NextResponse: { json: (body, init) => Response.json(body, init) } },
+    '@/lib/prisma': { prisma },
+    '@/lib/access': { syncCourseAccess: async (input) => { sync.push(input) } },
+    '@/lib/asaas/asaas': { verificarAssinaturaWebhook: async () => signatureOk },
+    '@/lib/email': { emailEnabled: () => true, sendEmail: async (opts) => { sent.push(opts); return true }, verifyEmailTemplate: (link) => ({ subject: 'verify', html: `<a href="${link}">verify</a>` }) },
+    '@/lib/email-verify': { newEmailToken: () => ({ token: 'raw-token', hash: 'hashed-token', expires: new Date() }), verifyEmailLink: (t) => `https://example.com/verify-email?token=${t}` },
+  }, { process: { env: {} } })
+  const call = (payload, signature = 'sig') => POST(new Request('http://localhost/api/webhooks/asaas', {
+    method: 'POST',
+    headers: { 'asaas-signature': signature },
+    body: typeof payload === 'string' ? payload : JSON.stringify(payload),
+  }))
+  return { call, deleted, createdUser, createdToken, createdPayment, sync, sent }
+}
+
+const webhookPayment = { id: 'pay_123', externalReference: 'registration-test', value: 197, status: 'RECEIVED' }
+
+test('webhook rejects missing signature', async () => {
+  const h = webhookHarness()
+  const response = await h.call({ event: 'PAYMENT_RECEIVED', payment: webhookPayment }, '')
+  assert.equal(response.status, 400)
+  assert.equal(h.createdUser.length, 0)
+})
+
+test('webhook rejects invalid signature', async () => {
+  const h = webhookHarness({ signatureOk: false })
+  const response = await h.call({ event: 'PAYMENT_RECEIVED', payment: webhookPayment })
+  assert.equal(response.status, 400)
+  assert.equal(h.createdUser.length, 0)
+})
+
+test('webhook ignores non-payment events', async () => {
+  const h = webhookHarness({ pending: { id: 'registration-test', name: 'Aluno', email: 'a@example.com', password: 'hash', plan: 'individual', value: 197, asaasPaymentId: 'pay_123' } })
+  const response = await h.call({ event: 'PAYMENT_CREATED', payment: webhookPayment })
+  assert.equal(response.status, 200)
+  assert.equal(h.createdUser.length, 0)
+})
+
+test('webhook activates account on PAYMENT_RECEIVED', async () => {
+  const h = webhookHarness({ pending: { id: 'registration-test', name: 'Aluno Teste', email: 'aluno@example.com', password: '$2hash', plan: 'individual', value: 197, asaasPaymentId: 'pay_123' } })
+  const response = await h.call({ event: 'PAYMENT_RECEIVED', payment: webhookPayment })
+  assert.equal(response.status, 200)
+  // User created from pending registration data, no password leak in response
+  assert.equal(h.createdUser.length, 1)
+  assert.equal(h.createdUser[0].email, 'aluno@example.com')
+  assert.equal(h.createdUser[0].password, '$2hash')
+  assert.equal(h.createdUser[0].plan, 'individual')
+  assert.equal(h.createdUser[0].role, 'student')
+  // Pending registration consumed, access synced, payment recorded with Asaas id
+  assert.deepEqual(h.deleted, ['registration-test'])
+  assert.equal(h.sync[0].active, true)
+  assert.equal(h.sync[0].plan, 'individual')
+  assert.equal(h.createdPayment[0].asaasId, 'pay_123')
+  assert.equal(h.createdPayment[0].status, 'paid')
+  // Verification email issued with hashed token
+  assert.equal(h.createdToken[0].token, 'hashed-token')
+  assert.equal(h.sent.length, 1)
+  assert.match(h.sent[0].html, /raw-token/)
+})
+
+test('webhook is idempotent when registration already processed', async () => {
+  const h = webhookHarness({ pending: null })
+  const response = await h.call({ event: 'PAYMENT_RECEIVED', payment: webhookPayment })
+  assert.equal(response.status, 200)
+  assert.equal(h.createdUser.length, 0)
+})
+
+test('webhook cleans pending when user already exists', async () => {
+  const h = webhookHarness({ pending: { id: 'registration-test', name: 'Aluno', email: 'aluno@example.com', password: 'x', plan: 'individual', value: 197, asaasPaymentId: 'pay_123' }, existingUser: { id: 'user-existing' } })
+  const response = await h.call({ event: 'PAYMENT_CONFIRMED', payment: webhookPayment })
+  assert.equal(response.status, 200)
+  assert.deepEqual(h.deleted, ['registration-test'])
+  assert.equal(h.createdUser.length, 0)
 })
 
 function healthHarness(queryRaw) {

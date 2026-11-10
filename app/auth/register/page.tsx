@@ -48,6 +48,7 @@ export default function Register() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [cpf, setCpf] = useState("")
   const [plan, setPlan] = useState("individual")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -62,7 +63,7 @@ export default function Register() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (loading) return
-    const parsed = registrationSchema.safeParse({ name, email, password, plan })
+    const parsed = registrationSchema.safeParse({ name, email, password, plan, cpf })
     if (!parsed.success) {
       setError(parsed.error.issues[0].message)
       return
@@ -172,10 +173,9 @@ export default function Register() {
             <div className="bg-blue-950/30 border border-blue-500/30 rounded-lg p-4 space-y-3">
               <p className="text-sm text-blue-400 font-bold">📨 Próximos Passos:</p>
               <ul className="text-xs text-muted-foreground space-y-2 ml-2">
-                <li>✓ Escaneie o QR Code ou copie a chave PIX acima</li>
+                <li>✓ Escaneie o QR Code ou copie o código PIX acima</li>
                 <li>✓ Realize o pagamento no seu banco</li>
-                <li>✓ Após confirmação, você receberá um código de ativação</li>
-                <li>✓ Use o código em /auth/ativar para liberar acesso</li>
+                <li>✓ Após a confirmação, você receberá um email para confirmar seu acesso</li>
               </ul>
               <p className="text-xs text-amber-400 font-semibold border-t border-blue-500/20 pt-2">
                 ⏱️ Tempo até ativação: até 24h
@@ -255,6 +255,10 @@ export default function Register() {
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" name="email" autoComplete="email" maxLength={254} type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cpf">CPF</Label>
+              <Input id="cpf" name="cpf" autoComplete="off" maxLength={14} inputMode="numeric" placeholder="000.000.000-00" value={cpf} onChange={(e) => setCpf(e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>

@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 })
     }
-    const { name, email, password, plan } = parsed.data
+    const { name, email, password, plan, cpf } = parsed.data
 
     const planConfig = PLANS[plan || "individual"]
     if (!planConfig) {
@@ -36,8 +36,10 @@ export async function POST(req: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 12)
-    const pixPayload = gerarPixPayload(planConfig.value)
-    const pixQR = await QRCode.toDataURL(pixPayload, { width: 400, margin: 2, color: { dark: '#000', light: '#FFF' } })
+
+    // Fallback padrão: PIX estático da chave central
+    let pixPayload = gerarPixPayload(planConfig.value)
+    let pixQR = await QRCode.toDataURL(pixPayload, { width: 400, margin: 2, color: { dark: '#000', light: '#FFF' } })
 
     const pending = await prisma.pendingRegistration.create({
       data: {
@@ -46,9 +48,38 @@ export async function POST(req: Request) {
         password: hashedPassword,
         plan: plan || "individual",
         value: planConfig.value,
+        cpf,
         pixPayload,
       },
     })
+
+    // Fluxo preferencial: cobrança PIX dinâmica no Asaas (ativação automática via webhook)
+    let asaasPaymentId: string | null = null
+    let invoiceUrl: string | null = null
+    if (process.env.ASAAS_API_KEY) {
+      try {
+        const { criarCliente, criarCobrancaPix, obterPixQrCode } = await import("@/lib/asaas/asaas")
+        const customer = await criarCliente(name, email, cpf)
+        const charge = await criarCobrancaPix({
+          customerId: customer.id,
+          valorCentavos: Math.round(planConfig.value * 100),
+          descricao: `Curso Omotenashi — ${planConfig.label}`,
+          vencimento: new Date().toISOString().slice(0, 10),
+          externalReference: pending.id,
+        })
+        const qr = await obterPixQrCode(charge.id)
+        pixPayload = qr.payload
+        pixQR = qr.encodedImage.startsWith("data:") ? qr.encodedImage : `data:image/png;base64,${qr.encodedImage}`
+        asaasPaymentId = charge.id
+        invoiceUrl = charge.invoiceUrl ?? null
+        await prisma.pendingRegistration.update({
+          where: { id: pending.id },
+          data: { asaasPaymentId: charge.id, pixPayload: qr.payload },
+        })
+      } catch (err) {
+        console.warn('[Asaas] Falha ao criar cobrança dinâmica, usando PIX estático:', err)
+      }
+    }
 
     // Enviar email ao cliente com PIX
     try {
@@ -62,8 +93,9 @@ export async function POST(req: Request) {
           <p>Seu cadastro foi criado com sucesso! Agora realize o pagamento via PIX:</p>
           <h3>Valor: R$ ${planConfig.value.toFixed(2)}</h3>
           <p><strong>Chave PIX:</strong> <code>${PIX_KEY}</code></p>
-          <p><strong>ID do Pagamento:</strong> <code>${escapeHtml(pending.id)}</code></p>
-          <p>Após confirmar o pagamento, seu acesso será liberado pela equipe Omotenashi (em até 24h).</p>
+          ${asaasPaymentId ? `<p><strong>ID do Pagamento:</strong> <code>${escapeHtml(asaasPaymentId)}</code></p>` : `<p><strong>ID do Pagamento:</strong> <code>${escapeHtml(pending.id)}</code></p>`}
+          ${invoiceUrl ? `<p>Ou pague pelo link seguro: <a href="${invoiceUrl}">${invoiceUrl}</a></p>` : ''}
+          <p>Após confirmar o pagamento, seu acesso será liberado automaticamente (via Asaas) ou pela equipe Omotenashi (em até 24h).</p>
           <p>Qualquer dúvida, entre em contato com nosso suporte.</p>
           <p>Obrigado!</p>
         `,
@@ -86,10 +118,12 @@ export async function POST(req: Request) {
           body: JSON.stringify({
             email,
             name,
+            cpf,
             plan: plan || 'individual',
             status: 'pending_payment',
             createdAt: new Date().toISOString(),
-            registrationId: pending.id
+            registrationId: pending.id,
+            asaasPaymentId
           })
         });
       }
