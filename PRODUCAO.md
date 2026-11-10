@@ -93,6 +93,10 @@ O Prisma usa `engineType = "client"` e o adaptador PostgreSQL JavaScript. Isso e
 
 Os endpoints de seed estão desabilitados em produção e não devem ser usados para inicializar um ambiente publicado.
 
+## Conciliação automática (cron)
+
+A Vercel dispara diariamente `GET /api/cron/conciliacao` às 09:00 UTC (06:00 BRT), autenticado por `Authorization: Bearer $CRON_SECRET` (env na Vercel e no `.env`). A rota confere no Asaas cada cadastro pendente com PIX dinâmico, ativa os pagos que o webhook não processou, reporta conflitos (e-mail já possui conta) e erros de API, e envia ao admin um e-mail diário de heartbeat (`ADMIN_ALERT_EMAIL`, com fallback para `ADMIN_USERNAME`) — assunto `[Ação necessária]` quando há pendências. Silêncio = tudo em ordem. Cadastros de PIX estático continuam exigindo o código manual em `/admin/ativacoes`.
+
 ## Limites da validação
 
 Não houve deploy, cobrança externa, alteração do banco real nem teste visual. Passar build e testes não elimina os bloqueadores acima. Permanecem avisos de depreciação de middleware e de z-index no gerador de imagem; não impediram a compilação. A pasta agora tem repositório Git local (sem remote configurado).
