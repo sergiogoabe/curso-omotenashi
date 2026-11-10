@@ -1,5 +1,13 @@
 # Verificação de produção
 
+## Revisão em 2026-11-10 (2ª passada) — go-live Asaas produção
+
+- **Chave live configurada** (`$aact_prod_...`, len 166) em `ASAAS_API_KEY` e `ASAAS_ENV=production` na Vercel (`curso-omotenashi`) + `.env` local. API live autenticada e verificada (listagem de webhooks da conta real).
+- **Webhook live recriado**: antigo `5b6da23d-...` apontava para URL morta (`omotenashi.infinity-agency.online/api/asaas/webhook/`) — deletado; novo **id `d45a6850-f451-4de4-a960-815d0a2775c4`**, url `https://curso-omotenashi.vercel.app/api/webhooks/asaas`, events [PAYMENT_CONFIRMED, PAYMENT_RECEIVED], apiVersion 3, sendType NON_SEQUENTIALLY, `authToken` de 64 hex definido pelo painel (guardado em `ASAAS_WEBHOOK_SECRET` local + Vercel). Update via POST retorna 404 — recriação é DELETE+POST.
+- **Smoke test em produção**: token correto → 200 `{"received":true}`; token errado → 400. Health OK. **E2E com cobrança real não foi executado** (criaria dinheiro real) — o fluxo completo já foi validado na homologação na 1ª passada.
+- Conta live tem 5 webhooks (ComandaAI, Oriental, Rent a Family, Omotenashi, ERP) — todos do mesmo dono, sem conflito de eventos por URL distinta.
+- Sandbox key (`$aact_hmlg_...`) substituída no `.env` — para voltar a homologar, gerar nova no sandbox ou restaurar de backup seguro.
+
 ## Revisão em 2026-11-10 — integração Asaas com PIX dinâmico e ativação automática
 
 **Commits:** `bdd63a9` (feature) e `8e6c652` (fix autenticação do webhook), ambos em `master` e publicados.
