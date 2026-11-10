@@ -38,17 +38,18 @@ model User {
 }
 
 model Company {
-  id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  phone     String?
-  cnpj      String?
-  plan      String   @default("business")
-  active    Boolean  @default(true)
-  users     User[]
-  events    Event[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String         @id @default(cuid())
+  name           String
+  email          String         @unique
+  phone          String?
+  cnpj           String?
+  plan           String         @default("business")
+  active         Boolean        @default(true)
+  users          User[]
+  events         Event[]
+  certifications Certification[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 }
 
 model Account {
@@ -90,6 +91,37 @@ model WebhookPing {
   event     String
   paymentId String?
   createdAt DateTime @default(now())
+}
+
+model Certification {
+  id         String    @id @default(cuid())
+  companyId  String
+  company    Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  tier       String
+  status     String    @default("treinando")
+  verifyCode String    @unique
+  issuedAt   DateTime?
+  expiresAt  DateTime?
+  notes      String?   @db.Text
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  @@index([companyId])
+  @@index([status])
+  @@index([expiresAt])
+}
+
+model PendingCertification {
+  id             String   @id @default(cuid())
+  companyName    String
+  email          String   @unique
+  cnpj           String?
+  tier           String
+  value          Float
+  asaasPaymentId String?  @unique
+  pixPayload     String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }
 
 model Category {

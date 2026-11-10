@@ -16,6 +16,32 @@ function load(file, mocks = {}, globals = {}) {
   return module.exports
 }
 
+// Carrega o módulo no realm principal (sem vm): necessário para libs que
+// validam tipos com `instanceof` (ex.: pdf-lib validando objetos de options).
+function loadMainRealm(file, mocks = {}, globals = {}) {
+  const module = { exports: {} }
+  const code = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true },
+  }).outputText
+  const requireShim = (name) => (Object.hasOwn(mocks, name) ? mocks[name] : require(name))
+  const fn = new Function(
+    'require', 'module', 'exports', 'process', 'Buffer', 'console', 'TextEncoder', 'URL', 'URLSearchParams',
+    code
+  )
+  fn(
+    requireShim,
+    module,
+    module.exports,
+    globals.process ?? process,
+    globals.Buffer ?? Buffer,
+    globals.console ?? console,
+    globals.TextEncoder ?? TextEncoder,
+    globals.URL ?? URL,
+    globals.URLSearchParams ?? URLSearchParams
+  )
+  return module.exports
+}
+
 const { registrationSchema, isValidCpf } = load('./lib/registration.ts')
 const { hashEmailToken } = load('./lib/email-verify.ts', { 'node:crypto': require('node:crypto') })
 const { gerarPixPayload, crc16 } = load('./lib/pix.ts')
@@ -259,7 +285,7 @@ test('asaas webhook validates static access token', () => {
   assert.equal(validarTokenWebhook(''), false)
 })
 
-function webhookHarness({ tokenOk = true, pending = null, existingUser = null } = {}) {
+function webhookHarness({ tokenOk = true, pending = null, existingUser = null, pendingSelo = null } = {}) {
   const deleted = []
   const createdUser = []
   const createdToken = []
@@ -267,11 +293,15 @@ function webhookHarness({ tokenOk = true, pending = null, existingUser = null } 
   const sync = []
   const sent = []
   const activated = []
+  const activatedSelo = []
   const pings = []
   const prisma = {
     pendingRegistration: {
       findFirst: async () => pending,
       delete: async ({ where }) => { deleted.push(where.id) },
+    },
+    pendingCertification: {
+      findFirst: async () => pendingSelo,
     },
     user: { findUnique: async () => existingUser },
     $transaction: async (fn) => fn({
@@ -288,6 +318,7 @@ function webhookHarness({ tokenOk = true, pending = null, existingUser = null } 
     '@/lib/access': { syncCourseAccess: async (input) => { sync.push(input) } },
     '@/lib/asaas/asaas': { validarTokenWebhook: () => tokenOk },
     '@/lib/asaas/ativar': { ativarRegistro: async (reg, paymentId) => { activated.push({ reg, paymentId }); return { userId: 'user-1', verifyLink: 'https://example.com/verify-email?token=t', emailSent: true } } },
+    '@/lib/selo/ativar': { ativarCertificacao: async (pending, paymentId) => { activatedSelo.push({ pending, paymentId }); return { companyId: 'company-1', certificationId: 'cert-1', verifyCode: 'OMO-TEST-TEST' } } },
     '@/lib/email': { emailEnabled: () => true, sendEmail: async (opts) => { sent.push(opts); return true }, verifyEmailTemplate: (link) => ({ subject: 'verify', html: `<a href="${link}">verify</a>` }) },
     '@/lib/email-verify': { newEmailToken: () => ({ token: 'raw-token', hash: 'hashed-token', expires: new Date() }), verifyEmailLink: (t) => `https://example.com/verify-email?token=${t}` },
   }, { process: { env: {} } })
@@ -296,7 +327,7 @@ function webhookHarness({ tokenOk = true, pending = null, existingUser = null } 
     headers: { 'asaas-access-token': token },
     body: typeof payload === 'string' ? payload : JSON.stringify(payload),
   }))
-  return { call, deleted, createdUser, createdToken, createdPayment, sync, sent, activated, pings }
+  return { call, deleted, createdUser, createdToken, createdPayment, sync, sent, activated, activatedSelo, pings }
 }
 
 const webhookPayment = { id: 'pay_123', externalReference: 'registration-test', value: 197, status: 'RECEIVED' }
@@ -424,12 +455,19 @@ test('health check hides database error details from public responses', async ()
   assert.equal(JSON.stringify(body).includes('private-host'), false)
   assert.equal(Object.hasOwn(body, 'error'), false)
 })
-function cronHarness({ pendings = [], users = [], consultar = null, ping = null } = {}) {
+function cronHarness({ pendings = [], users = [], consultar = null, ping = null, pendingsSelo = [], vencidos = 0, vencendo = [] } = {}) {
   const activated = []
+  const activatedSelo = []
   const sent = []
+  const expired = []
   const prisma = {
     pendingRegistration: { findMany: async () => pendings },
     user: { findMany: async () => users },
+    pendingCertification: { findMany: async () => pendingsSelo },
+    certification: {
+      updateMany: async (args) => { expired.push(args); return { count: vencidos } },
+      findMany: async () => vencendo,
+    },
     webhookPing: { findFirst: async () => ping },
   }
   const { GET } = load('app/api/cron/conciliacao/route.ts', {
@@ -437,6 +475,7 @@ function cronHarness({ pendings = [], users = [], consultar = null, ping = null 
     '@/lib/prisma': { prisma },
     '@/lib/asaas/asaas': { consultarPagamento: consultar ?? (async (id) => ({ id, status: 'PENDING', invoiceUrl: null })) },
     '@/lib/asaas/ativar': { ativarRegistro: async (reg, paymentId) => { activated.push({ reg, paymentId }); return { userId: 'user-1', verifyLink: 'https://example.com/verify?t=1', emailSent: true } } },
+    '@/lib/selo/ativar': { ativarCertificacao: async (pending, paymentId) => { activatedSelo.push({ pending, paymentId }); return { companyId: 'company-1', certificationId: 'cert-1', verifyCode: 'OMO-TEST-TEST' } } },
     '@/lib/email': {
       emailEnabled: () => true,
       sendEmail: async (opts) => { sent.push(opts); return true },
@@ -446,7 +485,7 @@ function cronHarness({ pendings = [], users = [], consultar = null, ping = null 
   const call = (token = 'segredo-do-cron') => GET(new Request('http://localhost/api/cron/conciliacao', {
     headers: token === null ? {} : { authorization: `Bearer ${token}` },
   }))
-  return { call, activated, sent }
+  return { call, activated, activatedSelo, sent, expired }
 }
 
 const cronPending = (email, paymentId = 'pay_9') => ({ id: 'reg-' + email, name: 'Aluno', email, plan: 'individual', value: 197, asaasPaymentId: paymentId })
@@ -504,4 +543,210 @@ test('cron conciliacao collects Asaas failures and still reports', async () => {
   assert.match(body.erros[0].motivo, /Asaas indisponível/)
   assert.equal(body.aguardando.length, 1)
   assert.equal(h.sent.length, 1)
+})
+
+// ---------------------------------------------------------------------------
+// Selo Omotenashi
+// ---------------------------------------------------------------------------
+
+const { seloCheckoutSchema, isValidCnpj, SELO_TIERS } = load('./lib/selo.ts')
+
+const seloValido = {
+  companyName: 'Empresa Teste Ltda',
+  email: '  CONTATO@EMPRESA.COM.BR ',
+  cnpj: '11.222.333/0001-81',
+  tier: 'ouro',
+}
+
+test('selo checkout normaliza email e CNPJ', () => {
+  const parsed = seloCheckoutSchema.parse(seloValido)
+  assert.equal(parsed.email, 'contato@empresa.com.br')
+  assert.equal(parsed.cnpj, '11222333000181')
+  assert.equal(parsed.tier, 'ouro')
+})
+
+test('selo checkout aceita CNPJ válido com e sem máscara', () => {
+  assert.ok(isValidCnpj('11.222.333/0001-81'))
+  assert.ok(isValidCnpj('11222333000181'))
+  assert.equal(isValidCnpj('11222333000180'), false)
+  assert.equal(isValidCnpj('11111111111111'), false)
+  assert.equal(isValidCnpj('1122233300018'), false)
+})
+
+test('selo checkout rejeita entradas inválidas', () => {
+  const casos = [
+    ['nome curto', { ...seloValido, companyName: 'A' }],
+    ['email inválido', { ...seloValido, email: 'nao-e-email' }],
+    ['cnpj inválido', { ...seloValido, cnpj: '11222333000180' }],
+    ['tier inexistente', { ...seloValido, tier: 'platina' }],
+  ]
+  for (const [label, input] of casos) {
+    test(`selo checkout rejeita ${label}`, () => assert.equal(seloCheckoutSchema.safeParse(input).success, false))
+  }
+})
+
+test('selo tiers cobrem os tres niveis com preco', () => {
+  assert.deepEqual(Object.keys(SELO_TIERS), ['prata', 'ouro', 'diamante'])
+  assert.equal(SELO_TIERS.prata.value, 1497)
+  assert.equal(SELO_TIERS.ouro.value, 2497)
+  assert.equal(SELO_TIERS.diamante.value, 3200)
+})
+
+test('webhook ativa selo pendente quando o pagamento chega', async () => {
+  const h = webhookHarness({
+    pending: null,
+    pendingSelo: { id: 'selo-1', companyName: 'Empresa Selo', email: 'selo@empresa.com.br', cnpj: '11222333000181', tier: 'ouro', value: 2497, asaasPaymentId: 'pay_selo' },
+  })
+  const response = await h.call({ event: 'PAYMENT_RECEIVED', payment: { id: 'pay_selo', externalReference: 'selo-1', value: 2497, status: 'RECEIVED' } })
+  assert.equal(response.status, 200)
+  assert.equal(h.activatedSelo.length, 1)
+  assert.equal(h.activatedSelo[0].paymentId, 'pay_selo')
+  assert.equal(h.activatedSelo[0].pending.companyName, 'Empresa Selo')
+  // Curso nao e afetado pelo fluxo de selo
+  assert.equal(h.activated.length, 0)
+})
+
+test('webhook ignora selo sem pending correspondente', async () => {
+  const h = webhookHarness({ pending: null, pendingSelo: null })
+  const response = await h.call({ event: 'PAYMENT_RECEIVED', payment: { id: 'pay_selo', externalReference: 'selo-1', value: 2497, status: 'RECEIVED' } })
+  assert.equal(response.status, 200)
+  assert.equal(h.activatedSelo.length, 0)
+})
+
+test('cron conciliacao ativa selo pago e expira certificados vencidos', async () => {
+  const h = cronHarness({
+    pendingsSelo: [{ id: 'selo-1', companyName: 'Empresa Selo', email: 'selo@empresa.com.br', cnpj: '11222333000181', tier: 'ouro', value: 2497, asaasPaymentId: 'pay_selo' }],
+    consultar: async (id) => ({ id, status: 'RECEIVED', invoiceUrl: null }),
+    vencidos: 2,
+    vencendo: [{ id: 'cert-1', tier: 'prata', expiresAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), company: { name: 'Empresa Selo' } }],
+  })
+  const response = await h.call()
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(h.activatedSelo.length, 1)
+  assert.equal(body.selos.ativados.length, 1)
+  assert.equal(body.selos.ativados[0].company, 'Empresa Selo')
+  assert.equal(body.selos.vencidosHoje, 2)
+  assert.equal(body.selos.vencendo.length, 1)
+  assert.equal(body.selos.vencendo[0].dias, 10)
+})
+
+test('cron conciliacao marca selo nao pago como aguardando', async () => {
+  const h = cronHarness({
+    pendingsSelo: [{ id: 'selo-2', companyName: 'Empresa Selo', email: 'selo2@empresa.com.br', cnpj: null, tier: 'prata', value: 1497, asaasPaymentId: 'pay_selo_2' }],
+    consultar: async (id) => ({ id, status: 'PENDING', invoiceUrl: null }),
+  })
+  const response = await h.call()
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(h.activatedSelo.length, 0)
+  assert.equal(body.selos.aguardando.length, 1)
+  assert.equal(body.selos.aguardando[0].status, 'PENDING')
+})
+
+test('cron registra erro de conciliation do selo sem travar o relatorio', async () => {
+  const h = cronHarness({
+    pendingsSelo: [{ id: 'selo-3', companyName: 'Empresa Selo', email: 'selo3@empresa.com.br', cnpj: null, tier: 'prata', value: 1497, asaasPaymentId: 'pay_selo_3' }],
+    consultar: async () => { throw new Error('Asaas indisponível') },
+  })
+  const response = await h.call()
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(body.erros.length, 1)
+  assert.match(body.erros[0].email, /selo Empresa Selo/)
+  assert.match(body.erros[0].motivo, /Asaas indisponível/)
+})
+
+function seloAtivarHarness({ company = null } = {}) {
+  const created = []
+  const deleted = []
+  const payments = []
+  const certifications = []
+  const tx = {
+    company: {
+      findUnique: async () => company,
+      create: async ({ data }) => { created.push(data); return { id: 'company-1', ...data } },
+    },
+    certification: {
+      create: async ({ data }) => { certifications.push(data); return { id: 'cert-1', ...data } },
+    },
+    pendingCertification: { delete: async ({ where }) => { deleted.push(where.id) } },
+    payment: { create: async ({ data }) => { payments.push(data); return { id: 'payment-1' } } },
+  }
+  const { ativarCertificacao } = load('lib/selo/ativar.ts', {
+    '@/lib/prisma': { prisma: { $transaction: async (fn) => fn(tx) } },
+    '@/lib/selo': { isSeloTier: (v) => ['prata', 'ouro', 'diamante'].includes(v) },
+  }, { process: { env: {} }, Buffer })
+  return { ativarCertificacao, created, deleted, payments, certifications }
+}
+
+test('ativarCertificacao cria empresa, certificacao e pagamento do selo', async () => {
+  const h = seloAtivarHarness()
+  const result = await h.ativarCertificacao(
+    { id: 'selo-1', companyName: 'Empresa Selo', email: 'selo@empresa.com.br', cnpj: '11222333000181', tier: 'ouro', value: 2497 },
+    'pay_selo'
+  )
+  assert.equal(h.created.length, 1)
+  assert.equal(h.created[0].email, 'selo@empresa.com.br')
+  assert.equal(h.certifications.length, 1)
+  assert.equal(h.certifications[0].status, 'treinando')
+  assert.equal(h.certifications[0].tier, 'ouro')
+  assert.match(h.certifications[0].verifyCode, /^OMO-[A-Z0-9]{4}-[A-Z0-9]{4}$/)
+  assert.deepEqual(h.deleted, ['selo-1'])
+  assert.equal(h.payments.length, 1)
+  assert.equal(h.payments[0].plan, 'selo-ouro')
+  assert.equal(h.payments[0].asaasId, 'pay_selo')
+  assert.equal(h.payments[0].status, 'paid')
+  assert.equal(result.companyId, 'company-1')
+})
+
+test('ativarCertificacao reaproveita empresa ja existente', async () => {
+  const h = seloAtivarHarness({ company: { id: 'company-9', name: 'Empresa Existente' } })
+  await h.ativarCertificacao(
+    { id: 'selo-2', companyName: 'Empresa Selo', email: 'selo@empresa.com.br', cnpj: null, tier: 'prata', value: 1497 },
+    'pay_selo_2'
+  )
+  assert.equal(h.created.length, 0)
+  assert.equal(h.certifications.length, 1)
+})
+
+function certificadoHarness({ certificado = null } = {}) {
+  const prisma = {
+    certification: {
+      findUnique: async () => certificado,
+    },
+  }
+  class MockNextResponse extends Response {
+    static json(body, init) { return Response.json(body, init) }
+  }
+  const { GET } = loadMainRealm('app/api/certificados/[codigo]/route.ts', {
+    'next/server': { NextResponse: MockNextResponse },
+    '@/lib/prisma': { prisma },
+    '@/lib/selo': { SELO_TIERS: { prata: { label: 'Selo Prata' }, ouro: { label: 'Selo Ouro' }, diamante: { label: 'Selo Diamante' } } },
+  }, { process: { env: { NEXT_PUBLIC_APP_URL: 'https://exemplo.test' } }, Buffer })
+  const call = () => GET(new Request('https://exemplo.test/api/certificados/OMO-TEST-TEST'), { params: Promise.resolve({ codigo: 'OMO-TEST-TEST' }) })
+  return { call }
+}
+
+test('certificado PDF é emitido apenas para selos certificados', async () => {
+  const valido = { id: 'cert-1', verifyCode: 'OMO-TEST-TEST', tier: 'ouro', status: 'certificado', issuedAt: new Date('2026-01-10'), expiresAt: new Date('2027-01-10'), company: { name: 'Empresa Selo' } }
+  const h = certificadoHarness({ certificado: valido })
+  const response = await h.call()
+  assert.equal(response.status, 200)
+  assert.equal(response.headers.get('content-type'), 'application/pdf')
+  assert.match(response.headers.get('content-disposition'), /certificado-omotenashi-OMO-TEST-TEST\.pdf/)
+  const bytes = Buffer.from(await response.arrayBuffer())
+  assert.equal(bytes.subarray(0, 4).toString(), '%PDF')
+})
+
+test('certificado PDF recusa selo ainda em treinamento', async () => {
+  const h = certificadoHarness({ certificado: { id: 'cert-2', tier: 'prata', status: 'treinando', company: { name: 'Empresa Selo' } } })
+  const response = await h.call()
+  assert.equal(response.status, 404)
+})
+
+test('certificado PDF devolve 404 para codigo inexistente', async () => {
+  const h = certificadoHarness({ certificado: null })
+  const response = await h.call()
+  assert.equal(response.status, 404)
 })

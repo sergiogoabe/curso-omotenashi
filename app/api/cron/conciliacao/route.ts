@@ -3,6 +3,7 @@ import crypto from "crypto"
 import { prisma } from "@/lib/prisma"
 import { consultarPagamento } from "@/lib/asaas/asaas"
 import { ativarRegistro } from "@/lib/asaas/ativar"
+import { ativarCertificacao } from "@/lib/selo/ativar"
 import { emailEnabled, sendEmail, conciliacaoEmailTemplate, ConciliacaoResumoEmail } from "@/lib/email"
 
 export const dynamic = "force-dynamic"
@@ -28,11 +29,14 @@ export type ConciliacaoResumo = ConciliacaoResumoEmail
 
 /**
  * Conciliação diária (rede de segurança do webhook): confere no Asaas cada
- * pending com cobrança dinâmica, ativa os pagos que o webhook perdeu e envia
+ * pending com cobrança dinâmica (curso e selo), ativa os pagos que o webhook
+ * perdeu, marca selos vencidos, avisa renovações ≤30d e envia
  * relatório/heartbeats por email ao admin. Agenda em vercel.json.
  */
 export async function GET(req: Request) {
   if (!autorizado(req)) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+
+  const agora = new Date()
 
   const pendings = await prisma.pendingRegistration.findMany({
     where: { asaasPaymentId: { not: null } },
@@ -53,6 +57,7 @@ export async function GET(req: Request) {
     erros: [],
     aguardando: [],
     ultimoEventoWebhook: null,
+    selos: { conferidos: 0, ativados: [], aguardando: [], vencidosHoje: 0, vencendo: [] },
   }
 
   for (const pending of pendings) {
@@ -75,6 +80,46 @@ export async function GET(req: Request) {
     }
   }
 
+  // Selo Omotenashi: concilia compras pagas e expira selos certificados.
+  const pendingsSelo = await prisma.pendingCertification.findMany({
+    where: { asaasPaymentId: { not: null } },
+    orderBy: { createdAt: "asc" },
+  })
+  resumo.selos.conferidos = pendingsSelo.length
+
+  for (const pending of pendingsSelo) {
+    if (!pending.asaasPaymentId) continue
+    try {
+      const charge = await consultarPagamento(pending.asaasPaymentId)
+      const paid = charge.status === "RECEIVED" || charge.status === "CONFIRMED"
+      if (!paid) {
+        resumo.selos.aguardando.push({ company: pending.companyName, status: charge.status })
+        continue
+      }
+      await ativarCertificacao(pending, pending.asaasPaymentId)
+      resumo.selos.ativados.push({ company: pending.companyName, tier: pending.tier })
+    } catch (err) {
+      resumo.erros.push({ email: `selo ${pending.companyName}`, motivo: erroMensagem(err) })
+    }
+  }
+
+  const vencidos = await prisma.certification.updateMany({
+    where: { status: "certificado", expiresAt: { lt: agora } },
+    data: { status: "vencido" },
+  })
+  resumo.selos.vencidosHoje = vencidos.count
+
+  const limiteRenovacao = new Date(agora.getTime() + 30 * 24 * 60 * 60 * 1000)
+  const vencendo = await prisma.certification.findMany({
+    where: { status: "certificado", expiresAt: { gte: agora, lte: limiteRenovacao } },
+    include: { company: { select: { name: true } } },
+    orderBy: { expiresAt: "asc" },
+  })
+  for (const selo of vencendo) {
+    const dias = Math.ceil((new Date(selo.expiresAt as Date).getTime() - agora.getTime()) / (24 * 60 * 60 * 1000))
+    resumo.selos.vencendo.push({ company: selo.company.name, tier: selo.tier, dias })
+  }
+
   const lastPing = await prisma.webhookPing.findFirst({ orderBy: { createdAt: "desc" } })
   resumo.ultimoEventoWebhook = lastPing?.createdAt ?? null
 
@@ -92,6 +137,7 @@ export async function GET(req: Request) {
     erros: resumo.erros,
     aguardando: resumo.aguardando,
     ultimoEventoWebhook: resumo.ultimoEventoWebhook,
+    selos: resumo.selos,
     notified,
   })
 }

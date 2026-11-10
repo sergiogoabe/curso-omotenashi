@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
 import { redirect } from "next/navigation"
 import {
+  Award,
   BookOpen,
   Building2,
   Calendar,
@@ -39,6 +40,7 @@ const groups = [
     items: [
       { href: "/admin/associados", label: "Associados", icon: UserPlus },
       { href: "/admin/empresas", label: "Empresas", icon: Building2 },
+      { href: "/admin/selo", label: "Selo", icon: Award },
       { href: "/admin/eventos", label: "Eventos", icon: Calendar },
     ],
   },

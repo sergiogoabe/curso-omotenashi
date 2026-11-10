@@ -341,11 +341,24 @@ export default function SeloPage() {
             Junte-se às empresas que já transformaram o atendimento e destaque-se da concorrência.
           </p>
           <Button asChild size="xl" className="gap-2 text-lg px-12">
-            <a href={`https://wa.me/5537984189874?text=Olá!%20Quero%20solicitar%20o%20Selo%20Omotenashi%20para%20minha%20empresa`} target="_blank" rel="noopener noreferrer">
+            <Link href="/selo/checkout">
               Quero Meu Selo <ArrowRight className="h-5 w-5" />
-            </a>
+            </Link>
           </Button>
-          <p className="mt-4 text-sm text-muted-foreground">Consultoria gratuita • Atendimento personalizado</p>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Pagamento via PIX • Certificação em até 12 meses de validade
+          </p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Prefere falar com a equipe?{" "}
+            <a
+              href="https://wa.me/5537984189874?text=Olá!%20Quero%20solicitar%20o%20Selo%20Omotenashi%20para%20minha%20empresa"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              WhatsApp
+            </a>
+          </p>
         </div>
       </section>
     </div>

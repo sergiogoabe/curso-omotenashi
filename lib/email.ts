@@ -84,11 +84,19 @@ export type ConciliacaoResumoEmail = {
   erros: { email: string; motivo: string }[]
   aguardando: { email: string; status: string }[]
   ultimoEventoWebhook: Date | null
+  selos: {
+    conferidos: number
+    ativados: { company: string; tier: string }[]
+    aguardando: { company: string; status: string }[]
+    vencidosHoje: number
+    vencendo: { company: string; tier: string; dias: number }[]
+  }
 }
 
 /** Relatório diário da conciliação automática para o admin (cron). */
 export function conciliacaoEmailTemplate(resumo: ConciliacaoResumoEmail) {
-  const alertas = resumo.ativados.length + resumo.conflitos.length + resumo.erros.length
+  const alertas =
+    resumo.ativados.length + resumo.conflitos.length + resumo.erros.length + resumo.selos.ativados.length
   const subject = alertas > 0 ? `[Ação necessária] Conciliação diária — Omotenashi` : "Conciliação diária OK — Omotenashi"
 
   const li = (texto: string) => `<li style="margin-bottom: 4px;">${escapeHtml(texto)}</li>`
@@ -109,6 +117,11 @@ export function conciliacaoEmailTemplate(resumo: ConciliacaoResumoEmail) {
         ${secao("Pagos com e-mail já cadastrado (resolver em /admin/ativacoes)", resumo.conflitos)}
         ${secao("Erros na consulta ao Asaas", resumo.erros.map((e) => `${e.email} — ${e.motivo}`))}
         ${secao("Aguardando pagamento", resumo.aguardando.map((a) => `${a.email} — ${a.status}`))}
+        <h2 style="color: #1a1a2e; margin-top: 24px;">Selo Omotenashi</h2>
+        <p>${resumo.selos.conferidos} compra(s) de selo conferida(s); ${resumo.selos.vencidosHoje} selo(s) marcado(s) como vencido(s) hoje.</p>
+        ${secao("Selos ativados agora", resumo.selos.ativados.map((s) => `${s.company} — ${s.tier}`))}
+        ${secao("Selos pagos não processados (ver /admin/selo)", resumo.selos.aguardando.map((s) => `${s.company} — ${s.status}`))}
+        ${secao("Selos vencendo em até 30 dias (renovar)", resumo.selos.vencendo.map((s) => `${s.company} — ${s.tier} — vence em ${s.dias} dia(s)`))}
         <p style="color: #999; font-size: 12px; margin-top: 24px;">
           Último evento do webhook: ${horasSemEvento === null ? "nunca" : `há ${horasSemEvento}h`}.
           Nenhum alerta acima significa que tudo está em ordem.

@@ -2,13 +2,16 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { validarTokenWebhook } from "@/lib/asaas/asaas"
 import { ativarRegistro } from "@/lib/asaas/ativar"
+import { ativarCertificacao } from "@/lib/selo/ativar"
 
 export const dynamic = "force-dynamic"
 
 /**
- * Webhook Asaas — ativação automática da conta após pagamento PIX confirmado.
- * Fluxo: PAYMENT_RECEIVED/PAYMENT_CONFIRMED → localiza PendingRegistration pelo
- * asaasPaymentId (ou externalReference) → cria User + Enrollment + email de verificação.
+ * Webhook Asaas — ativação automática após pagamento PIX confirmado.
+ * Fluxo curso: PAYMENT_RECEIVED/PAYMENT_CONFIRMED → PendingRegistration →
+ * User + Enrollment + email de verificação.
+ * Fluxo selo: sem PendingRegistration → PendingCertification → Company +
+ * Certification (status "treinando") + Payment.
  * Cada entrega válida é registrada em WebhookPing (saúde visível no admin).
  */
 export async function POST(req: Request) {
@@ -55,7 +58,21 @@ export async function POST(req: Request) {
         ],
       },
     })
-    if (!pending) return NextResponse.json({ received: true })
+    if (!pending) {
+      const pendingSelo = await prisma.pendingCertification.findFirst({
+        where: {
+          OR: [
+            { asaasPaymentId: payment.id },
+            ...(payment.externalReference ? [{ id: payment.externalReference }] : []),
+          ],
+        },
+      })
+      if (!pendingSelo) return NextResponse.json({ received: true })
+
+      await ativarCertificacao(pendingSelo, payment.id)
+      console.log(`[Asaas Webhook] Selo ativado: ${pendingSelo.companyName} (${pendingSelo.tier}, pagamento ${payment.id})`)
+      return NextResponse.json({ received: true })
+    }
 
     const existingUser = await prisma.user.findUnique({ where: { email: pending.email } })
     if (existingUser) {
