@@ -1,5 +1,21 @@
 # Verificação de produção
 
+## Revisão em 2026-11-10 — integração Asaas com PIX dinâmico e ativação automática
+
+**Commits:** `bdd63a9` (feature) e `8e6c652` (fix autenticação do webhook), ambos em `master` e publicados.
+
+- **Cadastro com PIX dinâmico Asaas**: `/api/register` valida CPF (zod + dígitos verificadores), cria cliente e cobrança PIX no Asaas (`lib/asaas/asaas.ts`), persiste `asaasPaymentId` + `pixPayload` dinâmico no `PendingRegistration` e envia `invoiceUrl` no email. Fallback para PIX estático da chave central se a API Asaas falhar.
+- **Ativação automática via webhook** (`/api/webhooks/asaas`): eventos `PAYMENT_RECEIVED`/`PAYMENT_CONFIRMED` criam o User em transação, consomem o pending, registram Payment (`asaasId`), sincronizam acesso ao curso e enviam email de verificação. Idempotente.
+- **⚠️ Correção importante na autenticação do webhook**: o Asaas **não assina o payload com HMAC** — ele envia o `authToken` configurado no webhook no header `asaas-access-token` (docs oficiais + hookdeck). A implementação anterior (`asaas-signature` HMAC) nunca receberia entrega real do Asaas. Substituída por `validarTokenWebhook` (comparação em tempo constante via hash). POST do webhook no Asaas **exige** `"interrupted": false` no body (senão 400 `invalid_poolInterrupted`); o `authToken` enviado no POST é ignorado quando o Asaas gera o próprio — solução: recriar o webhook e usar o token da resposta.
+- **Dois projetos Vercel no time**: `omotenashi` (deploy CLI, protegido, alias `omotenashi-vert`) e **`curso-omotenashi` (produção real, deploy via GitHub push)** servindo `curso-omotenashi.vercel.app`. Env vars de runtime devem ser configuradas **no projeto `curso-omotenashi`** — o CLI local agora está linkado a ele (`.vercel/project.json`). Misturar os dois faz variáveis "irem ao ar".
+- **Bancos diferentes**: o `DATABASE_URL` do `.env` local NÃO é o banco de produção do `curso-omotenashi` (verificado empiricamente: pending criado em produção não aparece na conexão local). Limpeza de dados de produção deve usar as rotas admin (`/api/admin/users` DELETE, `/api/admin/payments` DELETE) com sessão admin.
+- **Webhook Asaas (sandbox/homologação)**: id `6d5d69c3-1012-4f95-9012-327252051fad`, url `https://curso-omotenashi.vercel.app/api/webhooks/asaas`, events [PAYMENT_CONFIRMED, PAYMENT_RECEIVED], apiVersion 3, sendType NON_SEQUENTIALLY, `authToken` próprio (`whsec_...`, 54 chars, guardado em `ASAAS_WEBHOOK_SECRET` local + Vercel/curso-omotenashi).
+- **Teste E2E real executado em produção**: registro com CPF válido → PIX dinâmico Asaas (`pix-h.asaas.com`) criado; cobrança marcada como recebida no sandbox (`receiveInCash`) → Asaas entregou o webhook real → conta ativada (User criado, pending consumido, Payment registrado, login bloqueado apenas pela verificação de email — comportamento desenhado). Dados de teste removidos em seguida via rotas admin. Smoke: token correto → 200 `{"received":true}`, token errado/ausente → 400.
+- **Domínio Resend verificado** ✅ (`infinity-agency.online`, id `d0010ae7-...`): emails transacionais (verificação/PIX) saem do domínio próprio. Duplicata antiga (`2aaf4c59-...`, sa-east-1) ainda no painel — remoção opcional.
+- Migration `20261110090000_add_cpf_asaas_to_pending_registration` aplicada em produção (via `vercel-build` → `prisma migrate deploy`). `npm test`: 41/41. Typecheck limpo.
+- **Antes de cobrar clientes reais**: trocar `ASAAS_API_KEY` por chave live, `ASAAS_ENV=production` (senão BASE continua no sandbox), e recriar o webhook na conta live do Asaas com o mesmo fluxo (POST com `interrupted:false`, guardar o `authToken` da resposta em `ASAAS_WEBHOOK_SECRET` do projeto `curso-omotenashi`).
+- Pendências conhecidas: Zod 3.25.76 com vuln high (fix requer migração para v4 — adiado), código morto mantido por decisão (`src/lib/asaas.ts`, `lib/asaas/pix-payments.ts` — este último atualizado para usar `validarTokenWebhook`).
+
 ## Revisão em 2026-11-09 — verificação de email no cadastro
 
 - **Novo fluxo de verificação de email** (commits pendentes deste dia): conta só entra depois de clicar no link enviado por email (token SHA-256 de 64 hex, expira em 24h, tabela `VerificationToken` já existente). Contas antigas foram marcadas como verificadas pela migration `20261105170000_verify_existing_emails`.
