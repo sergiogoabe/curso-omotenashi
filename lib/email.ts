@@ -66,12 +66,53 @@ export function passwordResetEmail(link: string) {
     html: `
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
         <h1 style="color: #1a1a2e;">Redefinir senha</h1>
-        <p>Você solicitou a redefinição da sua senha no Omotenashi. Use o botão abaixo (válido por <strong>1 hora</strong>):</p>
+        <p>Você solicitou a redefinição de sua senha no Omotenashi. Use o botão abaixo (válido por <strong>1 hora</strong>):</p>
         <p style="text-align: center; margin: 32px 0;">
           <a href="${link}" style="background: #1a1a2e; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none;">Redefinir senha</a>
         </p>
         <p style="color: #666; font-size: 14px;">Se você não pediu isso, ignore este e-mail — sua senha permanece intacta.</p>
         <p style="color: #999; font-size: 12px;">Se o botão não funcionar, copie e cole no navegador:<br><span style="word-break: break-all;">${link}</span></p>
+      </div>
+    `,
+  }
+}
+
+export type ConciliacaoResumoEmail = {
+  conferidos: number
+  ativados: { name: string; email: string }[]
+  conflitos: string[]
+  erros: { email: string; motivo: string }[]
+  aguardando: { email: string; status: string }[]
+  ultimoEventoWebhook: Date | null
+}
+
+/** Relatório diário da conciliação automática para o admin (cron). */
+export function conciliacaoEmailTemplate(resumo: ConciliacaoResumoEmail) {
+  const alertas = resumo.ativados.length + resumo.conflitos.length + resumo.erros.length
+  const subject = alertas > 0 ? `[Ação necessária] Conciliação diária — Omotenashi` : "Conciliação diária OK — Omotenashi"
+
+  const li = (texto: string) => `<li style="margin-bottom: 4px;">${escapeHtml(texto)}</li>`
+  const secao = (titulo: string, itens: string[]) =>
+    itens.length ? `<h3 style="margin: 16px 0 8px; color: #1a1a2e;">${escapeHtml(titulo)}</h3><ul style="padding-left: 20px;">${itens.map(li).join("")}</ul>` : ""
+
+  const horasSemEvento = resumo.ultimoEventoWebhook
+    ? Math.floor((Date.now() - new Date(resumo.ultimoEventoWebhook).getTime()) / 3_600_000)
+    : null
+
+  return {
+    subject,
+    html: `
+      <div style="font-family: sans-serif; max-width: 520px; margin: 0 auto; padding: 24px;">
+        <h1 style="color: #1a1a2e;">Conciliação diária</h1>
+        <p>${resumo.conferidos} cadastro(s) com PIX dinâmico conferidos no Asaas.</p>
+        ${secao("Ativados agora (webhook não processou)", resumo.ativados.map((a) => `${a.name} — ${a.email}`))}
+        ${secao("Pagos com e-mail já cadastrado (resolver em /admin/ativacoes)", resumo.conflitos)}
+        ${secao("Erros na consulta ao Asaas", resumo.erros.map((e) => `${e.email} — ${e.motivo}`))}
+        ${secao("Aguardando pagamento", resumo.aguardando.map((a) => `${a.email} — ${a.status}`))}
+        <p style="color: #999; font-size: 12px; margin-top: 24px;">
+          Último evento do webhook: ${horasSemEvento === null ? "nunca" : `há ${horasSemEvento}h`}.
+          Nenhum alerta acima significa que tudo está em ordem.
+        </p>
       </div>
     `,
   }

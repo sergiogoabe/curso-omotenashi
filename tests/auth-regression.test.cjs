@@ -424,3 +424,84 @@ test('health check hides database error details from public responses', async ()
   assert.equal(JSON.stringify(body).includes('private-host'), false)
   assert.equal(Object.hasOwn(body, 'error'), false)
 })
+function cronHarness({ pendings = [], users = [], consultar = null, ping = null } = {}) {
+  const activated = []
+  const sent = []
+  const prisma = {
+    pendingRegistration: { findMany: async () => pendings },
+    user: { findMany: async () => users },
+    webhookPing: { findFirst: async () => ping },
+  }
+  const { GET } = load('app/api/cron/conciliacao/route.ts', {
+    'next/server': { NextResponse: { json: (body, init) => Response.json(body, init) } },
+    '@/lib/prisma': { prisma },
+    '@/lib/asaas/asaas': { consultarPagamento: consultar ?? (async (id) => ({ id, status: 'PENDING', invoiceUrl: null })) },
+    '@/lib/asaas/ativar': { ativarRegistro: async (reg, paymentId) => { activated.push({ reg, paymentId }); return { userId: 'user-1', verifyLink: 'https://example.com/verify?t=1', emailSent: true } } },
+    '@/lib/email': {
+      emailEnabled: () => true,
+      sendEmail: async (opts) => { sent.push(opts); return true },
+      conciliacaoEmailTemplate: (resumo) => ({ subject: 'cron subject', html: `<pre>${JSON.stringify(resumo)}</pre>` }),
+    },
+  }, { process: { env: { CRON_SECRET: 'segredo-do-cron', ADMIN_ALERT_EMAIL: 'admin@example.com' } }, Buffer })
+  const call = (token = 'segredo-do-cron') => GET(new Request('http://localhost/api/cron/conciliacao', {
+    headers: token === null ? {} : { authorization: `Bearer ${token}` },
+  }))
+  return { call, activated, sent }
+}
+
+const cronPending = (email, paymentId = 'pay_9') => ({ id: 'reg-' + email, name: 'Aluno', email, plan: 'individual', value: 197, asaasPaymentId: paymentId })
+
+test('cron conciliacao rejects requests without valid secret', async () => {
+  for (const token of [null, 'errado']) {
+    const h = cronHarness({ pendings: [cronPending('a@example.com')] })
+    const response = await h.call(token)
+    assert.equal(response.status, 401)
+    assert.equal(h.activated.length, 0)
+    assert.equal(h.sent.length, 0)
+  }
+})
+
+test('cron conciliacao activates paid pending the webhook missed', async () => {
+  const h = cronHarness({
+    pendings: [cronPending('pago@example.com')],
+    consultar: async (id) => ({ id, status: 'RECEIVED', invoiceUrl: null }),
+    ping: { createdAt: new Date() },
+  })
+  const response = await h.call()
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(h.activated.length, 1)
+  assert.equal(h.activated[0].paymentId, 'pay_9')
+  assert.equal(body.ativados.length, 1)
+  assert.equal(body.conferidos, 1)
+  // Daily heartbeat email sent to the admin
+  assert.equal(h.sent.length, 1)
+  assert.equal(h.sent[0].to, 'admin@example.com')
+})
+
+test('cron conciliacao reports paid-with-existing-account instead of activating', async () => {
+  const h = cronHarness({
+    pendings: [cronPending('existente@example.com')],
+    users: [{ email: 'Existente@example.com' }],
+    consultar: async (id) => ({ id, status: 'CONFIRMED', invoiceUrl: null }),
+  })
+  const response = await h.call()
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(h.activated.length, 0)
+  assert.deepEqual(body.conflitos, ['existente@example.com'])
+})
+
+test('cron conciliacao collects Asaas failures and still reports', async () => {
+  const h = cronHarness({
+    pendings: [cronPending('falha@example.com'), cronPending('ok@example.com', 'pay_10')],
+    consultar: async (id) => { if (id === 'pay_9') throw new Error('Asaas indisponível'); return { id, status: 'PENDING', invoiceUrl: null } },
+  })
+  const response = await h.call()
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(body.erros.length, 1)
+  assert.match(body.erros[0].motivo, /Asaas indisponível/)
+  assert.equal(body.aguardando.length, 1)
+  assert.equal(h.sent.length, 1)
+})
