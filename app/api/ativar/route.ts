@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     if (emailEnabled()) {
       const tpl = verifyEmailTemplate(link)
       const sent = await sendEmail({ to: user.email, subject: tpl.subject, html: tpl.html })
-      if (!sent) console.error(`[Verify Email] Falha ao enviar para ${user.email}`)
+      if (!sent) console.error(`[Verify Email] Falha ao enviar para ${user.email} — link de recuperação: ${link}`)
     } else {
       console.log(`[Verify Email] ${user.email} ${link}`)
     }

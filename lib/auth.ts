@@ -82,7 +82,8 @@ export const authOptions: NextAuthOptions = {
             })
             if (emailEnabled()) {
               const tpl = verifyEmailTemplate(verifyEmailLink(issued.token))
-              await sendEmail({ to: user.email, subject: tpl.subject, html: tpl.html })
+              const sent = await sendEmail({ to: user.email, subject: tpl.subject, html: tpl.html })
+              if (!sent) console.error(`[Verify Email] Falha ao reenviar para ${user.email} — link de recuperação: ${verifyEmailLink(issued.token)}`)
             }
           }
           throw new Error("Email não confirmado. Verifique sua caixa de entrada (link válido por 24h).")
