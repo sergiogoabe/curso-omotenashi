@@ -252,17 +252,14 @@ test('register falls back to static PIX when Asaas fails', async () => {
   assert.equal(body.pixQR, 'data:image/png;base64,dGVzdA==')
 })
 
-test('asaas webhook signature verification uses HMAC of raw body', async () => {
-  const { createHmac } = require('node:crypto')
-  const { verificarAssinaturaWebhook } = load('./lib/asaas/asaas.ts', {}, { process: { env: { ASAAS_WEBHOOK_SECRET: 's3cret' } }, Buffer })
-  const body = JSON.stringify({ event: 'PAYMENT_RECEIVED', payment: { id: 'pay_1' } })
-  const sig = createHmac('sha256', 's3cret').update(body, 'utf8').digest('hex')
-  assert.equal(await verificarAssinaturaWebhook(body, sig), true)
-  assert.equal(await verificarAssinaturaWebhook(body, sig.replace(/.$/, 'x')), false)
-  assert.equal(await verificarAssinaturaWebhook(body, ''), false)
+test('asaas webhook validates static access token', () => {
+  const { validarTokenWebhook } = load('./lib/asaas/asaas.ts', {}, { process: { env: { ASAAS_WEBHOOK_SECRET: 'tok_32chars_de_teste_secreto_abcdef' } }, Buffer })
+  assert.equal(validarTokenWebhook('tok_32chars_de_teste_secreto_abcdef'), true)
+  assert.equal(validarTokenWebhook('tok_32chars_de_teste_secreto_abcdeg'), false)
+  assert.equal(validarTokenWebhook(''), false)
 })
 
-function webhookHarness({ signatureOk = true, pending = null, existingUser = null } = {}) {
+function webhookHarness({ tokenOk = true, pending = null, existingUser = null } = {}) {
   const deleted = []
   const createdUser = []
   const createdToken = []
@@ -286,13 +283,13 @@ function webhookHarness({ signatureOk = true, pending = null, existingUser = nul
     'next/server': { NextResponse: { json: (body, init) => Response.json(body, init) } },
     '@/lib/prisma': { prisma },
     '@/lib/access': { syncCourseAccess: async (input) => { sync.push(input) } },
-    '@/lib/asaas/asaas': { verificarAssinaturaWebhook: async () => signatureOk },
+    '@/lib/asaas/asaas': { validarTokenWebhook: () => tokenOk },
     '@/lib/email': { emailEnabled: () => true, sendEmail: async (opts) => { sent.push(opts); return true }, verifyEmailTemplate: (link) => ({ subject: 'verify', html: `<a href="${link}">verify</a>` }) },
     '@/lib/email-verify': { newEmailToken: () => ({ token: 'raw-token', hash: 'hashed-token', expires: new Date() }), verifyEmailLink: (t) => `https://example.com/verify-email?token=${t}` },
   }, { process: { env: {} } })
-  const call = (payload, signature = 'sig') => POST(new Request('http://localhost/api/webhooks/asaas', {
+  const call = (payload, token = 'tok') => POST(new Request('http://localhost/api/webhooks/asaas', {
     method: 'POST',
-    headers: { 'asaas-signature': signature },
+    headers: { 'asaas-access-token': token },
     body: typeof payload === 'string' ? payload : JSON.stringify(payload),
   }))
   return { call, deleted, createdUser, createdToken, createdPayment, sync, sent }
@@ -300,15 +297,15 @@ function webhookHarness({ signatureOk = true, pending = null, existingUser = nul
 
 const webhookPayment = { id: 'pay_123', externalReference: 'registration-test', value: 197, status: 'RECEIVED' }
 
-test('webhook rejects missing signature', async () => {
+test('webhook rejects missing token', async () => {
   const h = webhookHarness()
   const response = await h.call({ event: 'PAYMENT_RECEIVED', payment: webhookPayment }, '')
   assert.equal(response.status, 400)
   assert.equal(h.createdUser.length, 0)
 })
 
-test('webhook rejects invalid signature', async () => {
-  const h = webhookHarness({ signatureOk: false })
+test('webhook rejects invalid token', async () => {
+  const h = webhookHarness({ tokenOk: false })
   const response = await h.call({ event: 'PAYMENT_RECEIVED', payment: webhookPayment })
   assert.equal(response.status, 400)
   assert.equal(h.createdUser.length, 0)

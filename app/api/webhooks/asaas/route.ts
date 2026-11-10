@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { syncCourseAccess } from "@/lib/access"
-import { verificarAssinaturaWebhook } from "@/lib/asaas/asaas"
+import { validarTokenWebhook } from "@/lib/asaas/asaas"
 import { emailEnabled, sendEmail, verifyEmailTemplate } from "@/lib/email"
 import { newEmailToken, verifyEmailLink } from "@/lib/email-verify"
 
@@ -14,14 +14,14 @@ export const dynamic = "force-dynamic"
  */
 export async function POST(req: Request) {
   const rawBody = await req.text()
-  const signature = req.headers.get("asaas-signature") ?? ""
+  const token = req.headers.get("asaas-access-token") ?? ""
 
-  if (!signature) {
-    return NextResponse.json({ error: "Assinatura ausente" }, { status: 400 })
+  if (!token) {
+    return NextResponse.json({ error: "Token ausente" }, { status: 400 })
   }
 
-  if (!(await verificarAssinaturaWebhook(rawBody, signature))) {
-    console.error("[Asaas Webhook] Assinatura inválida")
+  if (!validarTokenWebhook(token)) {
+    console.error("[Asaas Webhook] Token inválido")
     return NextResponse.json({ error: "Webhook inválido" }, { status: 400 })
   }
 

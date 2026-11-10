@@ -16,7 +16,7 @@ import {
   listarPagamentosDaAssinatura,
   consultarPagamento,
   cancelarAssinatura,
-  verificarAssinaturaWebhook,
+  validarTokenWebhook,
   toPixResponse,
   type AsaasCustomer,
   type AsaasPayment,
@@ -250,11 +250,11 @@ export class PixPayments {
     await cancelarAssinatura(subscriptionId);
   }
 
-  async handleWebhook(rawBody: string, signature: string): Promise<boolean> {
-    const { verificarAssinaturaWebhook } = await import("./asaas");
-    const valid = await verificarAssinaturaWebhook(rawBody, signature);
+  async handleWebhook(rawBody: string, token: string): Promise<boolean> {
+    const { validarTokenWebhook } = await import("./asaas");
+    const valid = validarTokenWebhook(token);
     if (!valid) {
-      console.error("[PixPayments] Assinatura inválida");
+      console.error("[PixPayments] Token inválido");
       return false;
     }
 

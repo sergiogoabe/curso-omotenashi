@@ -3,7 +3,7 @@
  * Usada por todos os projetos: ComandaAI, Rent-Family, Contabil-AI, Omotenashi
  */
 
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHash, timingSafeEqual } from "crypto";
 
 const onlyDigits = (v: string) => v.replace(/\D/g, "");
 
@@ -145,16 +145,17 @@ export async function cancelarAssinatura(subscriptionId: string): Promise<AsaasS
   );
 }
 
-export async function verificarAssinaturaWebhook(
-  rawBody: string, 
-  assinaturaRecebida: string
-): Promise<boolean> {
-  const secret = process.env.ASAAS_WEBHOOK_SECRET;
-  if (!secret) return false;
-  const hmac = createHmac("sha256", secret).update(rawBody, "utf8").digest("hex");
-  const a = Buffer.from(hmac, "utf8");
-  const b = Buffer.from(assinaturaRecebida, "utf8");
-  return a.length === b.length && timingSafeEqual(a, b);
+/**
+ * Valida o token estático do webhook Asaas (header `asaas-access-token`).
+ * O Asaas não assina o payload com HMAC — envia o authToken configurado no
+ * webhook a cada entrega; compara em tempo constante via hash.
+ */
+export function validarTokenWebhook(tokenRecebido: string): boolean {
+  const esperado = process.env.ASAAS_WEBHOOK_SECRET;
+  if (!esperado || !tokenRecebido) return false;
+  const a = createHash("sha256").update(tokenRecebido, "utf8").digest();
+  const b = createHash("sha256").update(esperado, "utf8").digest();
+  return timingSafeEqual(a, b);
 }
 
 export interface PixResponse {
