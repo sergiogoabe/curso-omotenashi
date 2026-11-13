@@ -19,9 +19,16 @@ export async function GET(_req: Request, context: RouteContext) {
         where: { id },
         include: {
           users: {
-            include: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              role: true,
+              courseAccess: true,
+              courseExpiresAt: true,
               progress: { select: { completed: true } },
-              enrollments: { where: { active: true }, select: { active: true } },
+              enrollments: { select: { active: true, expiresAt: true } },
             },
             orderBy: { name: "asc" },
           },

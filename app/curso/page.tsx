@@ -24,7 +24,7 @@ export default function Curso() {
       fetch("/api/lessons").then(r => r.json()),
       fetch("/api/enroll").then(r => r.json()),
     ]).then(([lessons, enrollData]) => {
-      const active = (enrollData.enrollments || []).some((e: any) => e.active)
+      const active = Boolean(enrollData.hasAccess)
       setHasAccess(active)
       const grouped: any = {}
       lessons.forEach((lesson: any) => {

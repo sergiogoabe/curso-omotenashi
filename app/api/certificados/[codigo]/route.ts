@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib"
 import { prisma } from "@/lib/prisma"
-import { SELO_TIERS } from "@/lib/selo"
+import { SELO_TIERS, isSeloVencido } from "@/lib/selo"
 
 export const dynamic = "force-dynamic"
 
@@ -47,8 +47,8 @@ export async function GET(req: Request, context: { params: Promise<{ codigo: str
   })
 
   if (!certificado) return NextResponse.json({ error: "Certificação não encontrada" }, { status: 404 })
-  if (certificado.status !== "certificado") {
-    return NextResponse.json({ error: "Esta certificação ainda não foi emitida" }, { status: 404 })
+  if (certificado.status !== "certificado" || isSeloVencido(certificado.status, certificado.expiresAt)) {
+    return NextResponse.json({ error: "Esta certificação não está válida" }, { status: 404 })
   }
 
   const tier = SELO_TIERS[certificado.tier as keyof typeof SELO_TIERS] ?? SELO_TIERS.prata

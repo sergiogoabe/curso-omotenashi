@@ -48,7 +48,7 @@ export default function LessonPage() {
 
   useEffect(() => {
     fetch("/api/enroll").then(r => r.json()).then(data => {
-      const active = (data.enrollments || []).some((e: any) => e.active)
+      const active = Boolean(data.hasAccess)
       setHasAccess(active)
     })
   }, [])

@@ -29,6 +29,10 @@ export const SELO_STATUS_LABEL: Record<SeloStatus, string> = {
   suspenso: "Suspenso",
 }
 
+export function isSeloVencido(status: string, expiresAt: Date | string | null | undefined, now = new Date()): boolean {
+  return status === "vencido" || (expiresAt ? new Date(expiresAt) < now : false)
+}
+
 /** CNPJ: 14 dígitos + dígitos verificadores. */
 export function isValidCnpj(value: string): boolean {
   const cnpj = value.replace(/\D/g, "")

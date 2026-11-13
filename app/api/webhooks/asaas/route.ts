@@ -80,7 +80,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ received: true })
     }
 
-    await ativarRegistro(pending, payment.id)
+    try {
+      await ativarRegistro(pending, payment.id)
+    } catch (error) {
+      const code = (error as { code?: string })?.code
+      if (code !== "P2002") throw error
+      // Entrega duplicada: outra requisição já criou a conta.
+      const ativado = await prisma.user.findUnique({ where: { email: pending.email } })
+      if (!ativado) throw error
+    }
 
     console.log(`[Asaas Webhook] Conta ativada: ${pending.email} (pagamento ${payment.id})`)
     return NextResponse.json({ received: true })

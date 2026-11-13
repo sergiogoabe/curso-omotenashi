@@ -2,7 +2,7 @@ import Link from "next/link"
 import { prisma } from "@/lib/prisma"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { SELO_TIERS, SELO_STATUS_LABEL, type SeloStatus } from "@/lib/selo"
+import { SELO_TIERS, SELO_STATUS_LABEL, isSeloVencido, type SeloStatus } from "@/lib/selo"
 
 export const dynamic = "force-dynamic"
 
@@ -41,8 +41,8 @@ export default async function VerificarSelo({ params }: { params: Promise<{ codi
 
   const status = certificado.status as SeloStatus
   const tier = SELO_TIERS[certificado.tier as keyof typeof SELO_TIERS] ?? SELO_TIERS.prata
-  const valido = status === "certificado"
-  const vencido = status === "vencido" || (certificado.expiresAt ? new Date(certificado.expiresAt) < new Date() : false)
+  const vencido = isSeloVencido(status, certificado.expiresAt)
+  const valido = status === "certificado" && !vencido
 
   return (
     <div className="flex min-h-[80vh] items-center justify-center px-4 py-8">
@@ -65,7 +65,7 @@ export default async function VerificarSelo({ params }: { params: Promise<{ codi
             </div>
             <div className="rounded-lg border border-border/50 p-3">
               <p className="text-xs text-muted-foreground">Situação</p>
-              <p className="mt-1 font-medium">{SELO_STATUS_LABEL[status] ?? certificado.status}</p>
+              <p className="mt-1 font-medium">{SELO_STATUS_LABEL[vencido ? "vencido" : status] ?? certificado.status}</p>
             </div>
             <div className="rounded-lg border border-border/50 p-3">
               <p className="text-xs text-muted-foreground">Emitido em</p>

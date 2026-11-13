@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { syncCourseAccess } from "@/lib/access"
 import { rateLimit, clientIp, tooMany } from "@/lib/rate-limit"
 import { emailEnabled, sendEmail, verifyEmailTemplate } from "@/lib/email"
 import { newEmailToken, verifyEmailLink } from "@/lib/email-verify"
@@ -38,16 +37,19 @@ export async function POST(req: Request) {
           password: pending.password,
           role: "student",
           plan: pending.plan,
+          courseAccess: true,
+          coursePlan: pending.plan,
+        },
+      })
+      await tx.enrollment.create({
+        data: {
+          userId: created.id,
+          plan: pending.plan,
+          active: true,
         },
       })
       await tx.pendingRegistration.delete({ where: { id: pending.id } })
       return created
-    })
-
-    await syncCourseAccess({
-      userId: user.id,
-      plan: pending.plan,
-      active: true,
     })
 
     const issued = newEmailToken()

@@ -67,7 +67,6 @@ export default function OG() {
             alignItems: "center",
             justifyContent: "center",
             gap: 0,
-            zIndex: 1,
           }}
         >
           {/* Badge */}

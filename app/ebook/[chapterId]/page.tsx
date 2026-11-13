@@ -22,7 +22,7 @@ export default function ChapterPage() {
     ]).then(([ch, chapters, enrollData]) => {
       setChapter(Array.isArray(ch) ? ch[0] : ch)
       setAllChapters(chapters)
-      const active = (enrollData.enrollments || []).some((e: any) => e.active)
+      const active = Boolean(enrollData.hasAccess)
       setHasAccess(active)
       setLoading(false)
     })

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { AdminLoading, EmptyNote, Field, PageHeading, fieldClass } from "@/components/admin/ui"
 import { adminFetch } from "@/components/admin/http"
+import { courseAccessFrom } from "@/lib/course-access-rule"
 import type { ClientRow, CompanyOption } from "@/types/admin"
 
 export default function AdminAssociados() {
@@ -124,7 +125,7 @@ export default function AdminAssociados() {
                 {filtered.map((user) => {
                   const done = user.progress.length
                   const pct = lessonCount > 0 ? Math.round((done / lessonCount) * 100) : 0
-                  const access = user.enrollments.some((item) => item.active) || user.courseAccess
+                  const access = courseAccessFrom(user)
                   return (
                     <tr key={user.id} className="border-b border-border/30">
                       <td className="px-2 py-3">

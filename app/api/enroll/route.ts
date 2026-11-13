@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { hasCourseAccess } from "@/lib/course-access"
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
@@ -31,13 +32,18 @@ export async function POST(req: Request) {
 export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.email) {
-    return NextResponse.json({ enrollments: [] })
+    return NextResponse.json({ enrollments: [], hasAccess: false })
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    include: { enrollments: { where: { active: true, OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] } } },
-  })
-
-  return NextResponse.json({ enrollments: user?.enrollments || [] })
+  const now = new Date()
+  const [hasAccess, user] = await Promise.all([
+    // Mesmo gate do servidor: admin, matrícula vigente ou liberação manual pela flag.
+    hasCourseAccess(),
+    prisma.user.findFirst({
+      where: { email: { equals: session.user.email, mode: "insensitive" } },
+      select: { enrollments: { orderBy: { createdAt: "desc" } } },
+    }),
+  ])
+  const enrollments = (user?.enrollments ?? []).filter((e) => e.active && (!e.expiresAt || e.expiresAt > now))
+  return NextResponse.json({ enrollments, hasAccess })
 }

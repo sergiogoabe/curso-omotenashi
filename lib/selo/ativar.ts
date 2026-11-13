@@ -55,19 +55,17 @@ export async function ativarCertificacao(
 
     await tx.pendingCertification.delete({ where: { id: pending.id } })
 
-    await tx.payment
-      .create({
-        data: {
-          asaasId: asaasPaymentId,
-          email: pending.email,
-          name: pending.companyName,
-          plan: `selo-${tier}`,
-          value: pending.value,
-          status: "paid",
-          paymentMethod: "pix",
-        },
-      })
-      .catch(() => {})
+    await tx.payment.create({
+      data: {
+        asaasId: asaasPaymentId,
+        email: pending.email,
+        name: pending.companyName,
+        plan: `selo-${tier}`,
+        value: pending.value,
+        status: "paid",
+        paymentMethod: "pix",
+      },
+    })
 
     return { companyId: company.id, certificationId: certification.id, verifyCode: certification.verifyCode as string }
   })

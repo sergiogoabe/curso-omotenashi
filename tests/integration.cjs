@@ -1,6 +1,6 @@
 // Real HTTP + PostgreSQL integration tests, isolated from the configured database.
-// Requires initdb/pg_ctl on PATH and a completed npm run build. Stripe events
-// are signed local fixtures; this does not test Stripe's external service.
+// Requires initdb/pg_ctl on PATH and a completed npm run build. Asaas events are
+// local fixtures with a fake access token; this does not call Asaas externally.
 const assert = require('node:assert/strict')
 const fs = require('node:fs')
 const os = require('node:os')
@@ -11,7 +11,6 @@ const { spawn, spawnSync } = require('node:child_process')
 const { PrismaClient } = require('@prisma/client')
 const { PrismaPg } = require('@prisma/adapter-pg')
 const bcrypt = require('bcryptjs')
-const Stripe = require('stripe')
 
 async function freePort() {
   const server = net.createServer()
@@ -78,10 +77,9 @@ async function main() {
     const databaseUrl = `postgresql://hermes_test@127.0.0.1:${dbPort}/postgres`
     db = new PrismaClient({ adapter: new PrismaPg({ connectionString: databaseUrl }) })
     await testSchema(db)
-    const webhookSecret = 'whsec_local_integration_fixture'
-    const stripe = new Stripe('sk_test_local_integration_fixture')
+    const webhookSecret = 'local_integration_fixture'
     server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'start', '--hostname', '127.0.0.1', '--port', String(appPort)], {
-      env: { ...process.env, DATABASE_URL: databaseUrl, NEXTAUTH_URL: base, NEXTAUTH_SECRET: crypto.randomBytes(32).toString('hex'), ADMIN_USERNAME: '', ADMIN_PASSWORD: '', STRIPE_SECRET_KEY: 'sk_test_local_integration_fixture', STRIPE_WEBHOOK_SECRET: webhookSecret, NODE_ENV: 'production' },
+      env: { ...process.env, DATABASE_URL: databaseUrl, NEXTAUTH_URL: base, NEXTAUTH_SECRET: crypto.randomBytes(32).toString('hex'), ADMIN_USERNAME: '', ADMIN_PASSWORD: '', ASAAS_API_KEY: '', ASAAS_SECRET_KEY: '', ASAAS_WEBHOOK_SECRET: webhookSecret, RESEND_API_KEY: '', INFINITY_DASHBOARD_API_KEY: '', NODE_ENV: 'production' },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
     let serverOutput = ''
@@ -122,10 +120,14 @@ async function main() {
       assert.ok((await res.text()).includes('<form'))
       ok(`HTML and security headers ${url}`)
     }
+    const protectedPage = await anon('/dashboard')
+    assert.ok([307, 308].includes(protectedPage.status), `proxy status ${protectedPage.status}`)
+    assert.match(protectedPage.headers.get('location') || '', /\/auth\/login/)
+    ok('proxy redirects anonymous requests to the login page')
     const invalid = await post(anon, '/api/register', { name: {}, email: 'bad', password: 'a', plan: 'toString' })
     assert.equal(invalid.status, 400); ok('invalid registration rejected')
     const password = 'synthetic-test-password'
-    const registration = await post(anon, '/api/register', { name: ' Aluno Teste ', email: ' ALUNO@example.com ', password, plan: 'individual' })
+    const registration = await post(anon, '/api/register', { name: ' Aluno Teste ', email: ' ALUNO@example.com ', password, plan: 'individual', cpf: '11144477735' })
     assert.equal(registration.status, 200)
     const pix = await registration.json()
     assert.equal(pix.value, 197)
@@ -144,6 +146,9 @@ async function main() {
     assert.equal(await db.enrollment.count(), 1)
     ok('activation creates user and enrollment atomically')
     const student = client()
+    assert.equal((await login(student, 'ALUNO@EXAMPLE.COM', password)).status, 401)
+    ok('login is blocked until the email is verified')
+    await db.user.update({ where: { email: 'aluno@example.com' }, data: { emailVerified: new Date() } })
     assert.equal((await login(student, 'ALUNO@EXAMPLE.COM', password)).status, 200)
     const session = await (await student('/api/auth/session')).json()
     assert.equal(session.user.email, 'aluno@example.com')
@@ -162,7 +167,10 @@ async function main() {
     assert.equal((await anon('/api/lessons?slug=aula')).status, 403)
     assert.equal((await anon('/api/ebook?slug=capitulo')).status, 403)
     assert.equal((await student('/api/lessons?slug=aula')).status, 200)
-    ok('public catalog hides content; authorized student gets lesson')
+    const ebook = await student('/api/ebook?slug=capitulo')
+    assert.equal(ebook.status, 200)
+    assert.equal((await ebook.json()).content, 'EBOOK_PRIVADO')
+    ok('public catalog hides content; authorized student gets lesson and ebook content')
     await db.enrollment.updateMany({ data: { expiresAt: new Date(0) } })
     assert.equal((await student('/api/lessons?slug=aula')).status, 403)
     assert.equal((await student('/api/ebook?slug=capitulo')).status, 403)
@@ -173,25 +181,22 @@ async function main() {
     assert.equal((await anon('/api/seed')).status, 403)
     assert.equal((await anon('/api/seed-ebook')).status, 403)
     ok('forum and production seed endpoints protected')
-    const paidPending = await db.pendingRegistration.create({ data: { name: 'Pagamento', email: 'paid@example.com', password: await bcrypt.hash(password, 12), plan: 'individual', value: 197 } })
-    const checkout = { id: 'cs_test_localfixture', object: 'checkout.session', currency: 'brl', amount_total: 19700, payment_status: 'unpaid', metadata: { registrationId: paidPending.id } }
-    await db.payment.create({ data: { checkoutId: checkout.id, email: paidPending.email, plan: 'individual', value: 197, paymentMethod: 'stripe' } })
-    async function webhook(type) {
-      const payload = JSON.stringify({ id: 'evt_localfixture', object: 'event', type, data: { object: checkout } })
-      const signature = stripe.webhooks.generateTestHeaderString({ payload, secret: webhookSecret })
-      return anon('/api/stripe/webhook', { method: 'POST', body: payload, headers: { 'stripe-signature': signature, 'content-type': 'application/json' } })
+    const paidPending = await db.pendingRegistration.create({ data: { name: 'Pagamento', email: 'paid@example.com', password: await bcrypt.hash(password, 12), plan: 'individual', value: 197, asaasPaymentId: 'pay_localfixture' } })
+    async function webhook(event, token = webhookSecret) {
+      const payload = JSON.stringify({ event, payment: { id: 'pay_localfixture', externalReference: paidPending.id, value: 197, status: event === 'PAYMENT_RECEIVED' ? 'CONFIRMED' : 'PENDING' } })
+      return anon('/api/webhooks/asaas', { method: 'POST', body: payload, headers: { 'asaas-access-token': token, 'content-type': 'application/json' } })
     }
-    assert.equal((await webhook('checkout.session.completed')).status, 200)
+    assert.equal((await webhook('PAYMENT_RECEIVED', 'token-invalido')).status, 400)
+    assert.equal((await webhook('PAYMENT_CREATED')).status, 200)
     assert.equal(await db.user.count({ where: { email: paidPending.email } }), 0)
-    ok('signed unpaid Stripe fixture does not activate user')
-    checkout.payment_status = 'paid'
-    const confirmations = await Promise.all(Array.from({ length: 4 }, () => webhook('checkout.session.async_payment_succeeded')))
+    ok('unauthenticated or non-payment Asaas events do not activate user')
+    const confirmations = await Promise.all(Array.from({ length: 4 }, () => webhook('PAYMENT_RECEIVED')))
     assert.ok(confirmations.every(r => r.status === 200))
     const paidUser = await db.user.findUnique({ where: { email: paidPending.email } })
     assert.equal(await db.enrollment.count({ where: { userId: paidUser.id } }), 1)
-    assert.equal((await db.payment.findUnique({ where: { checkoutId: checkout.id } })).status, 'completed')
-    ok('concurrent signed payment fixtures grant exactly one enrollment in PostgreSQL')
-    const admin = await db.user.create({ data: { email: 'admin-test@example.com', password: await bcrypt.hash(password, 12), role: 'admin' } })
+    assert.equal((await db.payment.findUnique({ where: { asaasId: 'pay_localfixture' } })).status, 'paid')
+    ok('concurrent authenticated Asaas payment fixtures grant exactly one enrollment in PostgreSQL')
+    const admin = await db.user.create({ data: { email: 'admin-test@example.com', password: await bcrypt.hash(password, 12), role: 'admin', emailVerified: new Date() } })
     const adminClient = client()
     assert.equal((await login(adminClient, admin.email, password)).status, 200)
     const users = await (await adminClient('/api/admin/users')).json()

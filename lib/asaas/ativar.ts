@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma"
-import { syncCourseAccess } from "@/lib/access"
 import { emailEnabled, sendEmail, verifyEmailTemplate } from "@/lib/email"
 import { newEmailToken, verifyEmailLink } from "@/lib/email-verify"
 
@@ -20,30 +19,32 @@ export async function ativarRegistro(
         password: pending.password,
         role: "student",
         plan: pending.plan,
+        courseAccess: true,
+        coursePlan: pending.plan,
+      },
+    })
+    await tx.enrollment.create({
+      data: {
+        userId: created.id,
+        plan: pending.plan,
+        active: true,
+      },
+    })
+    await tx.payment.create({
+      data: {
+        asaasId: asaasPaymentId,
+        userId: created.id,
+        email: pending.email,
+        name: pending.name,
+        plan: pending.plan,
+        value: pending.value,
+        status: "paid",
+        paymentMethod: "pix",
       },
     })
     await tx.pendingRegistration.delete({ where: { id: pending.id } })
     return created
   })
-
-  await syncCourseAccess({
-    userId: user.id,
-    plan: pending.plan,
-    active: true,
-  })
-
-  await prisma.payment.create({
-    data: {
-      asaasId: asaasPaymentId,
-      userId: user.id,
-      email: pending.email,
-      name: pending.name,
-      plan: pending.plan,
-      value: pending.value,
-      status: "paid",
-      paymentMethod: "pix",
-    },
-  }).catch(() => {})
 
   const issued = newEmailToken()
   await prisma.verificationToken.create({

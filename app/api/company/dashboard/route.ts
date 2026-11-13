@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { courseAccessFrom } from "@/lib/course-access-rule"
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -42,7 +43,7 @@ export async function GET() {
       inProgressLessons: inProgress,
       totalLessons,
       progressPercent: totalLessons > 0 ? Math.round((completed / totalLessons) * 100) : 0,
-      enrolled: emp.enrollments.some((e: any) => e.active),
+      enrolled: courseAccessFrom(emp),
       recentActivity: emp.progress.slice(-5).reverse().map((p: any) => ({
         lessonTitle: p.lesson?.title,
         completed: p.completed,
@@ -56,7 +57,7 @@ export async function GET() {
     companyEmail: user.company.email,
     companyPlan: user.company.plan,
     totalEmployees: employees.length,
-    enrolledEmployees: employees.filter((e: any) => e.enrollments.some((e: any) => e.active)).length,
+    enrolledEmployees: employees.filter((e: any) => courseAccessFrom(e)).length,
     avgProgress: employees.length > 0
       ? Math.round(employees.reduce((sum: number, e: any) => {
           const c = e.progress.filter((p: any) => p.completed).length

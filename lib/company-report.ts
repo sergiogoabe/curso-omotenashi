@@ -1,5 +1,7 @@
+import { courseAccessFrom } from "@/lib/course-access-rule"
+
 type ProgressRow = { completed: boolean }
-type EnrollmentRow = { active: boolean }
+type EnrollmentRow = { active: boolean; expiresAt?: Date | null }
 
 export type CompanyEmployeeRow = {
   id: string
@@ -22,6 +24,7 @@ export function mapCompanyEmployees(
     phone: string | null
     role: string
     courseAccess: boolean
+    courseExpiresAt?: Date | null
     progress: ProgressRow[]
     enrollments: EnrollmentRow[]
   }>,
@@ -40,7 +43,7 @@ export function mapCompanyEmployees(
       completedLessons,
       totalLessons,
       progressPercent: Math.round((completedLessons / total) * 100),
-      enrolled: user.enrollments.some((row) => row.active) || user.courseAccess,
+      enrolled: courseAccessFrom(user),
     }
   })
 }

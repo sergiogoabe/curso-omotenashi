@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { AdminLoading, EmptyNote, Field, PageHeading, fieldClass } from "@/components/admin/ui"
 import { adminFetch } from "@/components/admin/http"
+import { courseAccessFrom } from "@/lib/course-access-rule"
 import { formatDate, toDateInput } from "@/lib/format"
 import { PLAN_IDS, PLANS, getPlan } from "@/lib/plans"
 import type { ClientRow, CompanyOption } from "@/types/admin"
@@ -22,9 +23,7 @@ type Draft = {
 }
 
 function hasAccess(user: ClientRow) {
-  const enrollment = user.enrollments.some((item) => item.active && (!item.expiresAt || new Date(item.expiresAt) > new Date()))
-  const flagged = user.courseAccess && (!user.courseExpiresAt || new Date(user.courseExpiresAt) > new Date())
-  return enrollment || flagged
+  return courseAccessFrom(user)
 }
 
 export default function AdminClientes() {

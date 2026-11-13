@@ -18,7 +18,7 @@ export default function Ebook() {
       fetch("/api/enroll").then(r => r.json()),
     ]).then(([data, enrollData]) => {
       setChapters(data)
-      const active = (enrollData.enrollments || []).some((e: any) => e.active)
+      const active = Boolean(enrollData.hasAccess)
       setHasAccess(active)
       setLoading(false)
     })
